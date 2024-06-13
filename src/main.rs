@@ -1,274 +1,206 @@
-use wgpu::{
-    Color, CommandEncoder, Device, Queue, RenderPass, StoreOp, Surface, SurfaceConfiguration, TextureFormat, VertexBufferLayout, VertexState
-};
-use wgpu::util::{DeviceExt};
+use renderer_backend::pipeline_builder::PipelineBuilder;
+mod renderer_backend;
 use winit::{
-    event::{Event, WindowEvent},
-    event_loop::{ControlFlow, EventLoop},
-    window::WindowBuilder,
+    dpi::PhysicalSize,
+    event::*,
+    event_loop::EventLoopBuilder,
+    keyboard::{KeyCode, PhysicalKey},
+    window::{Window, WindowBuilder},
 };
 
-const WIDTH: u32 = 640;
-const HEIGHT: u32 = 480;
-
-#[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-struct Vertex {
-    position: [f32; 2],
+struct State<'a> {
+    surface: wgpu::Surface<'a>,
+    device: wgpu::Device,
+    queue: wgpu::Queue,
+    config: wgpu::SurfaceConfiguration,
+    size: PhysicalSize<u32>,
+    window: &'a Window,
+    render_pipeline: wgpu::RenderPipeline,
 }
 
-impl Vertex {
-    fn new(x: f32, y: f32) -> Self {
-        Self { position: [x, y] }
+impl<'a> State<'a> {
+    async fn new(window: &'a Window) -> Self {
+        let size = window.inner_size();
+
+        let instance_descriptor = wgpu::InstanceDescriptor {
+            backends: wgpu::Backends::all(),
+            ..Default::default()
+        };
+        let instance = wgpu::Instance::new(instance_descriptor);
+        let surface = instance.create_surface(window).unwrap();
+
+        let adapter_descriptor = wgpu::RequestAdapterOptionsBase {
+            power_preference: wgpu::PowerPreference::default(),
+            compatible_surface: Some(&surface),
+            force_fallback_adapter: false,
+        };
+        let adapter = instance.request_adapter(&adapter_descriptor).await.unwrap();
+
+        let device_descriptor = wgpu::DeviceDescriptor {
+            required_features: wgpu::Features::empty(),
+            required_limits: wgpu::Limits::default(),
+            label: Some("Device"),
+        };
+        let (device, queue) = adapter
+            .request_device(&device_descriptor, None)
+            .await
+            .unwrap();
+
+        let surface_capabilities = surface.get_capabilities(&adapter);
+        let surface_format = surface_capabilities
+            .formats
+            .iter()
+            .copied()
+            .filter(|f| f.is_srgb())
+            .next()
+            .unwrap_or(surface_capabilities.formats[0]);
+        let config = wgpu::SurfaceConfiguration {
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            format: surface_format,
+            width: size.width,
+            height: size.height,
+            present_mode: surface_capabilities.present_modes[0],
+            alpha_mode: surface_capabilities.alpha_modes[0],
+            view_formats: vec![],
+            desired_maximum_frame_latency: 2,
+        };
+        surface.configure(&device, &config);
+
+        let mut pipeline_builder = PipelineBuilder::new();
+        pipeline_builder.set_shader_module("shaders/shader.wgsl", "vs_main", "fs_main");
+        pipeline_builder.set_pixel_format(config.format);
+        let render_pipeline = pipeline_builder.build_pipeline(&device);
+
+        Self {
+            window,
+            surface,
+            device,
+            queue,
+            config,
+            size,
+            render_pipeline,
+        }
+    }
+
+    fn resize(&mut self, new_size: PhysicalSize<u32>) {
+        if new_size.width > 0 && new_size.height > 0 {
+            self.size = new_size;
+            self.config.width = new_size.width;
+            self.config.height = new_size.height;
+            self.surface.configure(&self.device, &self.config);
+        }
+    }
+
+    fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
+        let drawable = self.surface.get_current_texture()?;
+        let image_view_descriptor = wgpu::TextureViewDescriptor::default();
+        let image_view = drawable.texture.create_view(&image_view_descriptor);
+
+        let command_encoder_descriptor = wgpu::CommandEncoderDescriptor {
+            label: Some("Render Encoder"),
+        };
+        let mut command_encoder = self
+            .device
+            .create_command_encoder(&command_encoder_descriptor);
+        let color_attachment = wgpu::RenderPassColorAttachment {
+            view: &image_view,
+            resolve_target: None,
+            ops: wgpu::Operations {
+                load: wgpu::LoadOp::Clear(wgpu::Color {
+                    r: 0.75,
+                    g: 0.5,
+                    b: 0.25,
+                    a: 1.0,
+                }),
+                store: wgpu::StoreOp::Store,
+            },
+        };
+
+        let render_pass_descriptor = wgpu::RenderPassDescriptor {
+            label: Some("Render Pass"),
+            color_attachments: &[Some(color_attachment)],
+            depth_stencil_attachment: None,
+            occlusion_query_set: None,
+            timestamp_writes: None,
+        };
+
+        {
+            let mut render_pass = command_encoder.begin_render_pass(&render_pass_descriptor);
+            render_pass.set_pipeline(&self.render_pipeline);
+            render_pass.draw(0..3, 0..1);
+        }
+
+        self.queue.submit(std::iter::once(command_encoder.finish()));
+
+        drawable.present();
+
+        Ok(())
     }
 }
 
-#[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-struct Uniforms {
-    hello_world: u32,
+#[derive(Debug, Clone, Copy)]
+enum CustomEvent {
+    Timer,
 }
 
-async fn run(event_loop: &EventLoop<()>) {
-    // Create a new instance of wgpu
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::default());
+async fn run() {
+    env_logger::init();
 
-    // Get a reference to the primary adapter
-    let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions {
-        power_preference: wgpu::PowerPreference::default(),
-        compatible_surface: None,
-        force_fallback_adapter: false,
-    })
-    .await
-    .unwrap();
-
-    // Create a window
-    let window = WindowBuilder::new()
-        .with_inner_size(winit::dpi::LogicalSize::new(WIDTH, HEIGHT))
-        .build(event_loop)
+    let event_loop = EventLoopBuilder::<CustomEvent>::with_user_event()
+        .build()
         .unwrap();
+    let window = WindowBuilder::new().build(&event_loop).unwrap();
+    let event_loop_proxy = event_loop.create_proxy();
 
-    // Create a surface for displaying the output
-    let surface = unsafe { instance.create_surface(&window) }.unwrap();
-
-    // Get the capabilities of the surface
-    let surface_capabilities = surface.get_capabilities(&adapter);
-
-    // Choose a format for the swapchain
-    let format = surface_capabilities.formats[0];
-
-    // Create a surface configuration
-    let surface_configuration = SurfaceConfiguration {
-        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-        format,
-        width: WIDTH,
-        height: HEIGHT,
-        present_mode: wgpu::PresentMode::Fifo,
-        alpha_mode: surface_capabilities.alpha_modes[0],
-        desired_maximum_frame_latency: 2,
-        view_formats: Vec::new(),
-    };
-
-    // Create a device and queue
-    let (device, queue) = adapter.request_device(
-        &wgpu::DeviceDescriptor {
-            label: None,
-            required_features: wgpu::Features::empty(),
-            required_limits: wgpu::Limits::default(),
-        },
-        None,
-    )
-    .await.unwrap();
-
-    // Create a swapchain
-    let swap_chain = surface.configure(&device, &surface_configuration);
-
-    // Create a pipeline layout
-    let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-        entries: &[wgpu::BindGroupLayoutEntry {
-            binding: 0,
-            visibility: wgpu::ShaderStages::FRAGMENT,
-            ty: wgpu::BindingType::Buffer {
-                has_dynamic_offset: false,
-                min_binding_size: None,
-                ty: wgpu::BufferBindingType::Uniform,
-            },
-            count: None,
-        }],
-        label: None,
+    std::thread::spawn(move || loop {
+        std::thread::sleep(std::time::Duration::from_millis(17));
+        event_loop_proxy.send_event(CustomEvent::Timer).ok();
     });
 
-    // Create a pipeline
-    let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-        layout: Some(&device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: None,
-            bind_group_layouts: &[&bind_group_layout],
-            push_constant_ranges: &[],
-        })),
-        vertex: VertexState {
-            module: &device.create_shader_module(wgpu::ShaderModuleDescriptor {
-                label: None,
-                source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
-            }),
-            entry_point: "vs_main",
-            buffers: &[VertexBufferLayout {
-                array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
-                step_mode: wgpu::VertexStepMode::Vertex,
-                attributes: &[
-                    wgpu::VertexAttribute {
-                        offset: 0,
-                        shader_location: 0,
-                        format: wgpu::VertexFormat::Float32x2,
-                    },
-                ],
-            }],
-        },
-        fragment: Some(wgpu::FragmentState {
-            module: &device.create_shader_module(wgpu::ShaderModuleDescriptor {
-                label: None,
-                source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
-            }),
-            entry_point: "fs_main",
-            targets: &[Some(wgpu::ColorTargetState {
-                format: format,
-                blend: Some(wgpu::BlendState::REPLACE),
-                write_mask: wgpu::ColorWrites::ALL,
-            })],
-        }),
-        primitive: wgpu::PrimitiveState {
-            topology: wgpu::PrimitiveTopology::TriangleList,
-            strip_index_format: None,
-            front_face: wgpu::FrontFace::Ccw,
-            cull_mode: Some(wgpu::Face::Back),
-            polygon_mode: wgpu::PolygonMode::Fill,
-            conservative: false,
-            unclipped_depth: false,
-        },
-        depth_stencil: None,
-        multisample: wgpu::MultisampleState {
-            count: 1,
-            mask: !0,
-            alpha_to_coverage_enabled: false,
-        },
-        label: None,
-        multiview: None,
-    });
+    let mut state = State::new(&window).await;
 
-    // Create a vertex buffer
-    let vertices = [
-        Vertex::new(-1.0, -1.0),
-        Vertex::new(1.0, -1.0),
-        Vertex::new(1.0, 1.0),
-        Vertex::new(-1.0, 1.0),
-    ];
-    let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: None,
-        contents: bytemuck::cast_slice(&vertices),
-        usage: wgpu::BufferUsages::VERTEX,
-    });
+    event_loop
+        .run(move |event, elwt| match event {
+            Event::UserEvent(..) => {
+                state.window.request_redraw();
+            }
 
-    // Create a uniform buffer
-    let hello_world = 42;
-    let uniforms = Uniforms { hello_world };
-    let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: None,
-        contents: bytemuck::cast_slice(&[uniforms]),
-        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-    });
-
-    // Create a bind group
-    let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-        layout: &bind_group_layout,
-        entries: &[
-            wgpu::BindGroupEntry {
-                binding: 0,
-                resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
-                    buffer: &uniform_buffer,
-                    offset: 0,
-                    size: None,
-                }),
-            },
-        ],
-        label: None,
-    });
-
-    // Run the main loop
-    event_loop.run(move |event, _, control_flow| {
-        // Update the uniform buffer
-        queue.write_buffer(&uniform_buffer, 0, bytemuck::cast_slice(&[uniforms]));
-
-        match event {
             Event::WindowEvent {
-                event: WindowEvent::CloseRequested,
-                ..
-            } => *control_flow = ControlFlow::Exit,
-            Event::MainEventsCleared => {
-                // Redraw the window
-                window.request_redraw();
-            }
-            Event::RedrawRequested(_) => {
-                // Get a new frame from the swapchain
-                let frame = swap_chain
-                    .get_current_frame()
-                    .expect("Failed to acquire next swap chain texture.");
-                let view = frame
-                    .output
-                    .texture
-                    .create_view(&wgpu::TextureViewDescriptor::default());
+                window_id,
+                ref event,
+            } if window_id == state.window.id() => match event {
+                WindowEvent::Resized(physical_size) => state.resize(*physical_size),
 
-                // Create a command encoder
-                let mut encoder =
-                    device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                        label: None,
-                    });
+                WindowEvent::CloseRequested
+                | WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            physical_key: PhysicalKey::Code(KeyCode::Escape),
+                            state: ElementState::Pressed,
+                            repeat: false,
+                            ..
+                        },
+                    ..
+                } => {
+                    println!("Goodbye see you!");
+                    elwt.exit();
+                }
 
-                // Create a render pass
-                let mut render_pass = encoder.begin_render_pass(
-                    &wgpu::RenderPassDescriptor {
-                        label: None,
-                        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                            view: &view,
-                            resolve_target: None,
-                            ops: wgpu::Operations {
-                                load: wgpu::LoadOp::Clear(Color {
-                                    r: 0.1,
-                                    g: 0.2,
-                                    b: 0.3,
-                                    a: 1.0,
-                                }),
-                                store: StoreOp::Store,
-                            },
-                        })],
-                        depth_stencil_attachment: None,
-                        timestamp_writes: None,
-                        occlusion_query_set: None,
-                    },
-                );
+                WindowEvent::RedrawRequested => match state.render() {
+                    Ok(_) => {}
+                    Err(wgpu::SurfaceError::Lost) => state.resize(state.size),
+                    Err(wgpu::SurfaceError::OutOfMemory) => elwt.exit(),
+                    Err(e) => eprintln!("{:?}", e),
+                },
 
-                // Draw the triangle
-                render_pass.set_pipeline(&pipeline);
-                render_pass.set_vertex_buffer(0, &vertex_buffer);
-                render_pass.set_bind_group(0, &bind_group, &[]);
-                render_pass.draw(0..4, 0..1);
+                _ => (),
+            },
 
-                // Finish the render pass
-                drop(render_pass);
-
-                // Submit the command buffer
-                queue.submit(std::iter::once(encoder.finish()));
-
-                // Present the frame
-                frame.present();
-            }
             _ => {}
-        }
-    });
+        })
+        .expect("Error!");
 }
 
 fn main() {
-    // Initialize the event loop
-    let event_loop = EventLoop::new();
-
-    // Run the main function
-    pollster::block_on(run(&event_loop));
+    pollster::block_on(run());
 }
