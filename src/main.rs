@@ -152,7 +152,7 @@ async fn run() {
     let event_loop = EventLoopBuilder::<CustomEvent>::with_user_event()
         .build()
         .unwrap();
-    let window = WindowBuilder::new().with_inner_size(PhysicalSize::new(1200, 600)).build(&event_loop).unwrap();
+    let window = WindowBuilder::new().with_inner_size(PhysicalSize::new(SCREEN_SIZE.0, SCREEN_SIZE.1)).build(&event_loop).unwrap();
     let event_loop_proxy = event_loop.create_proxy();
 
     std::thread::spawn(move || loop {
