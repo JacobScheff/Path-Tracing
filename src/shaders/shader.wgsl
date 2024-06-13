@@ -6,9 +6,9 @@ struct VertexOutput {
 fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
 
     var positions = array<vec2<f32>, 3>(
-        vec2<f32>(-0.75, -0.75),
-        vec2<f32>(0.75, -0.75),
-        vec2<f32>(0.0, 0.75),
+        vec2<f32>(-1.0, -1.0), // Bottom Left
+        vec2<f32>(1.0, -1.0), // Bottom Right
+        vec2<f32>(-1.0, 1.0)  // Top Center
     );
 
     var out: VertexOutput;
@@ -18,5 +18,9 @@ fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
+    var abc = vec3<f32>(1.0, 0.0, 0.0);
+    var def = vec3<f32>(0.0, 1.0, 0.0);
+    var ghi = dot(abc, def);
+
     return vec4<f32>(0.0, 0.4, 0.4, 1.0);
 }
