@@ -129,7 +129,8 @@ impl<'a> State<'a> {
         {
             let mut render_pass = command_encoder.begin_render_pass(&render_pass_descriptor);
             render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.draw(0..3, 0..1);
+            render_pass.draw(0..3, 0..1); // Draw the first triangle
+            render_pass.draw(3..6, 0..1); // Draw the second triangle
         }
 
         self.queue.submit(std::iter::once(command_encoder.finish()));
