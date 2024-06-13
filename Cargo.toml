@@ -1,0 +1,12 @@
+[package]
+name = "ray-tracing"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+winit = "0.29.10"
+env_logger = "0.11.1"
+log = "0.4.20"
+wgpu = "0.19.1"
+pollster = "0.3.0"
+bytemuck = { version = "1.16.0", features = ["derive"] }
