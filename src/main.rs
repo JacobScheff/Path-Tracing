@@ -8,6 +8,8 @@ use winit::{
     window::{Window, WindowBuilder},
 };
 
+const SCREEN_SIZE : (u32, u32) = (1200, 600);
+
 struct State<'a> {
     surface: wgpu::Surface<'a>,
     device: wgpu::Device,
@@ -149,7 +151,7 @@ async fn run() {
     let event_loop = EventLoopBuilder::<CustomEvent>::with_user_event()
         .build()
         .unwrap();
-    let window = WindowBuilder::new().build(&event_loop).unwrap();
+    let window = WindowBuilder::new().with_inner_size(PhysicalSize::new(1200, 600)).build(&event_loop).unwrap();
     let event_loop_proxy = event_loop.create_proxy();
 
     std::thread::spawn(move || loop {
