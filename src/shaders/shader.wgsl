@@ -1,12 +1,10 @@
 struct VertexOutput {
     @builtin(position) pos: vec4<f32>,
     @location(0) screen_size: vec2<f32>,
-    @location(1) fov: f32,
-    @location(2) screen_width: f32,
-    @location(3) screen_height: f32,
-    @location(4) aspect_ratio: f32,
-    @location(5) camera_position: vec3<f32>,
-    @location(6) camera_rotation: vec3<f32>,
+    @location(1) screen_width: f32,
+    @location(2) screen_height: f32,
+    @location(3) camera_position: vec3<f32>,
+    @location(4) camera_rotation: vec3<f32>,
 };
 
 struct HitInfo {
@@ -41,10 +39,8 @@ fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
     var out: VertexOutput;
     out.pos = vec4<f32>(positions[i], 0.0, 1.0);
     out.screen_size = screen_size;
-    out.fov = fov;
     out.screen_width = screen_width;
     out.screen_height = screen_height;
-    out.aspect_ratio = screen_size.x / screen_size.y;
     out.camera_position = camera_position;
     out.camera_rotation = camera_rotation;
     return out;
