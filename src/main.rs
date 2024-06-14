@@ -1,5 +1,6 @@
 use renderer_backend::pipeline_builder::PipelineBuilder;
 mod renderer_backend;
+use wgpu::{util::BufferInitDescriptor, BufferUsages};
 use winit::{
     dpi::PhysicalSize,
     event::*,
@@ -7,9 +8,8 @@ use winit::{
     keyboard::{KeyCode, PhysicalKey},
     window::{Window, WindowBuilder},
 };
-use wgpu::{util::BufferInitDescriptor, BufferUsages};
 
-const SCREEN_SIZE : (u32, u32) = (1200, 600);
+const SCREEN_SIZE: (u32, u32) = (1200, 600);
 
 struct State<'a> {
     surface: wgpu::Surface<'a>,
@@ -70,9 +70,26 @@ impl<'a> State<'a> {
         };
         surface.configure(&device, &config);
 
+        // Create bind group layout and bind group for sphere data
+        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Storage { read_only: true },
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            }],
+            label: Some("Sphere Bind Group Layout"),
+        });
+
+        // Pass bind group layout to pipeline builder
         let mut pipeline_builder = PipelineBuilder::new();
         pipeline_builder.set_shader_module("shaders/shader.wgsl", "vs_main", "fs_main");
         pipeline_builder.set_pixel_format(config.format);
+        pipeline_builder.set_bind_group_layout(bind_group_layout);
         let render_pipeline = pipeline_builder.build_pipeline(&device);
 
         // Create a temporary bind group
@@ -177,7 +194,10 @@ async fn run() {
     let event_loop = EventLoopBuilder::<CustomEvent>::with_user_event()
         .build()
         .unwrap();
-    let window = WindowBuilder::new().with_inner_size(PhysicalSize::new(SCREEN_SIZE.0, SCREEN_SIZE.1)).build(&event_loop).unwrap();
+    let window = WindowBuilder::new()
+        .with_inner_size(PhysicalSize::new(SCREEN_SIZE.0, SCREEN_SIZE.1))
+        .build(&event_loop)
+        .unwrap();
     let event_loop_proxy = event_loop.create_proxy();
 
     std::thread::spawn(move || loop {
@@ -188,7 +208,8 @@ async fn run() {
     let mut state = State::new(&window).await;
 
     // Create storage buffer for sphere data
-    let sphere_buffer_size = (sphere_centers.len() * std::mem::size_of::<[f32; 4]>()) as wgpu::BufferAddress;
+    let sphere_buffer_size =
+        (sphere_centers.len() * std::mem::size_of::<[f32; 4]>()) as wgpu::BufferAddress;
     let sphere_buffer = state.device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("Sphere Buffer"),
         size: sphere_buffer_size,
@@ -201,22 +222,27 @@ async fn run() {
     for (i, center) in sphere_centers.iter().enumerate() {
         sphere_data.push([center[0], center[1], center[2], sphere_radii[i]]);
     }
-    state.queue.write_buffer(&sphere_buffer, 0, bytemuck::cast_slice(&sphere_data));
+    state
+        .queue
+        .write_buffer(&sphere_buffer, 0, bytemuck::cast_slice(&sphere_data));
 
     // Create bind group layout and bind group for sphere data
-    let bind_group_layout = state.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-        entries: &[wgpu::BindGroupLayoutEntry {
-            binding: 0,
-            visibility: wgpu::ShaderStages::FRAGMENT,
-            ty: wgpu::BindingType::Buffer {
-                ty: wgpu::BufferBindingType::Storage { read_only: true },
-                has_dynamic_offset: false,
-                min_binding_size: None,
-            },
-            count: None,
-        }],
-        label: Some("Sphere Bind Group Layout"),
-    });
+    let bind_group_layout =
+        state
+            .device
+            .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                }],
+                label: Some("Sphere Bind Group Layout"),
+            });
     state.bind_group = state.device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("Sphere Bind Group"),
         layout: &bind_group_layout,

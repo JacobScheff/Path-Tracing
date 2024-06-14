@@ -53,9 +53,10 @@ impl PipelineBuilder {
 
         let pipeline_layout_descriptor = wgpu::PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
-            bind_group_layouts: &[],
+            bind_group_layouts: &[self.bind_group_layout.as_ref().unwrap()],
             push_constant_ranges: &[],
         };
+        
         let render_pipeline_layout = device.create_pipeline_layout(&pipeline_layout_descriptor);
 
         let render_targets = [Some(wgpu::ColorTargetState {

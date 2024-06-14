@@ -77,7 +77,7 @@ fn calculate_ray_collision(ray_origin: vec3<f32>, ray_direction: vec3<f32>) -> H
     closest_hit.distance = 1000000.0;
 
     // Loop through each sphere in the storage buffer
-    for (var i = 0u; i < length(sphere_data); i = i + 1u) {
+    for (var i = 0u; i < 6u; i = i + 1u) {
         var sphere_center: vec3<f32> = sphere_data[i].xyz;
         var sphere_radius: f32 = sphere_data[i].w;
 
