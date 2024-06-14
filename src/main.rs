@@ -7,6 +7,7 @@ use winit::{
     keyboard::{KeyCode, PhysicalKey},
     window::{Window, WindowBuilder},
 };
+use wgpu::{util::BufferInitDescriptor, BufferUsages};
 
 const SCREEN_SIZE : (u32, u32) = (1200, 600);
 
@@ -18,6 +19,7 @@ struct State<'a> {
     size: PhysicalSize<u32>,
     window: &'a Window,
     render_pipeline: wgpu::RenderPipeline,
+    bind_group: wgpu::BindGroup,
 }
 
 impl<'a> State<'a> {
@@ -81,6 +83,13 @@ impl<'a> State<'a> {
             config,
             size,
             render_pipeline,
+            bind_group: device.create_bind_group(
+                &wgpu::BindGroupDescriptor { // Create empty descriptor
+                    label: None,
+                    layout: &bind_group_layout, // Needs to be valid layout
+                    entries: &[],
+                }
+            ),
         }
     }
 
@@ -129,6 +138,7 @@ impl<'a> State<'a> {
         {
             let mut render_pass = command_encoder.begin_render_pass(&render_pass_descriptor);
             render_pass.set_pipeline(&self.render_pipeline);
+            render_pass.set_bind_group(0, &self.bind_group, &[]); // Access using self
             render_pass.draw(0..3, 0..1); // Draw the first triangle
             render_pass.draw(3..6, 0..1); // Draw the second triangle
         }
@@ -149,6 +159,17 @@ enum CustomEvent {
 async fn run() {
     env_logger::init();
 
+    // Create sphere data
+    let sphere_centers: Vec<[f32; 3]> = vec![
+        [40.0, 0.0, 0.0],
+        [-40.0, 0.0, 0.0],
+        [0.0, 40.0, 0.0],
+        [0.0, -40.0, 0.0],
+        [0.0, 0.0, 40.0],
+        [0.0, 0.0, -40.0],
+    ];
+    let sphere_radii: Vec<f32> = vec![10.0; 6];
+
     let event_loop = EventLoopBuilder::<CustomEvent>::with_user_event()
         .build()
         .unwrap();
@@ -161,6 +182,52 @@ async fn run() {
     });
 
     let mut state = State::new(&window).await;
+
+    // Create storage buffer for sphere data
+    let sphere_buffer_size = (sphere_centers.len() * std::mem::size_of::<[f32; 4]>()) as wgpu::BufferAddress;
+    let sphere_buffer = state.device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("Sphere Buffer"),
+        size: sphere_buffer_size,
+        usage: BufferUsages::STORAGE | BufferUsages::COPY_DST,
+        mapped_at_creation: false,
+    });
+
+    // Combine center and radius into vec4 and copy to buffer
+    let mut sphere_data: Vec<[f32; 4]> = Vec::new();
+    for (i, center) in sphere_centers.iter().enumerate() {
+        sphere_data.push([center[0], center[1], center[2], sphere_radii[i]]);
+    }
+    state.queue.write_buffer(&sphere_buffer, 0, bytemuck::cast_slice(&sphere_data));
+
+    // Create bind group layout and bind group for sphere data
+    let bind_group_layout = state.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        entries: &[wgpu::BindGroupLayoutEntry {
+            binding: 0,
+            visibility: wgpu::ShaderStages::FRAGMENT,
+            ty: wgpu::BindingType::Buffer {
+                ty: wgpu::BufferBindingType::Storage { read_only: true },
+                has_dynamic_offset: false,
+                min_binding_size: None,
+            },
+            count: None,
+        }],
+        label: Some("Sphere Bind Group Layout"),
+    });
+    state.bind_group = state.device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("Sphere Bind Group"),
+        layout: &bind_group_layout,
+        entries: &[wgpu::BindGroupEntry {
+            binding: 0,
+            resource: sphere_buffer.as_entire_binding(),
+        }],
+    });
+
+    // Pass bind group layout to pipeline builder
+    let mut pipeline_builder = PipelineBuilder::new();
+    pipeline_builder.set_shader_module("shaders/shader.wgsl", "vs_main", "fs_main");
+    pipeline_builder.set_pixel_format(state.config.format);
+    pipeline_builder.set_bind_group_layout(bind_group_layout);
+    state.render_pipeline = pipeline_builder.build_pipeline(&state.device);
 
     event_loop
         .run(move |event, elwt| match event {

@@ -6,6 +6,7 @@ pub struct PipelineBuilder {
     vertex_entry: String,
     fragment_entry: String,
     pixel_format: wgpu::TextureFormat,
+    bind_group_layout: Option<wgpu::BindGroupLayout>,
 }
 
 impl PipelineBuilder {
@@ -16,7 +17,12 @@ impl PipelineBuilder {
             vertex_entry: "dummy".to_string(),
             fragment_entry: "dummy".to_string(),
             pixel_format: wgpu::TextureFormat::Rgba8Unorm,
+            bind_group_layout: None,
         }
+    }
+
+    pub fn set_bind_group_layout(&mut self, bind_group_layout: wgpu::BindGroupLayout) {
+        self.bind_group_layout = Some(bind_group_layout); // Move ownership 
     }
 
     pub fn set_shader_module(&mut self, 
@@ -91,6 +97,12 @@ impl PipelineBuilder {
                 alpha_to_coverage_enabled: false,
             },
             multiview: None,
+        };
+
+        let pipeline_layout_descriptor = wgpu::PipelineLayoutDescriptor {
+            label: Some("Render Pipeline Layout"),
+            bind_group_layouts: &[self.bind_group_layout.as_ref().unwrap()], // Use the layout here
+            push_constant_ranges: &[],
         };
 
         device.create_render_pipeline(&render_pipeline_descriptor)
