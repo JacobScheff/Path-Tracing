@@ -54,7 +54,7 @@ fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     // Map pixel coordinates to screen plane coordinates
     let u: f32 = (2.0 * in.pos.x / in.screen_size.x - 1.0) * in.screen_width / 2.0;
-    let v: f32 = (1.0 - 2.0 * in.pos.y / in.screen_size.y) * in.screen_height / 2.0;
+    let v: f32 = (1.0 - 2.0 * (in.screen_size.y - in.pos.y) / in.screen_size.y) * in.screen_height / 2.0;
 
     // Create ray and ray direction vector
     var ray_direction: vec3<f32> = vec3<f32>(u, v, -1.0);
