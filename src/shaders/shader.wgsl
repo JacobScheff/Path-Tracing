@@ -30,7 +30,7 @@ fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
         vec2<f32>(1.0, -1.0) // Bottom Right
     );
 
-    var screen_size: vec2<f32> = vec2<f32>(12000.0, 600.0);
+    var screen_size: vec2<f32> = vec2<f32>(1200.0, 600.0);
     var fov: f32 = 60.0 * 3.14159 / 180.0;
     var aspect_ratio: f32 = screen_size.x / screen_size.y;
     var screen_width: f32 = tan(fov * 0.5) * 2.0;
@@ -53,49 +53,49 @@ fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     // Map pixel coordinates to screen plane coordinates
-    // let u: f32 = (2.0 * in.pos.x / in.screen_size.x - 1.0) * in.screen_width / 2.0;
-    let u: f32 = (in.pos.x / in.screen_size.x);
+    let u: f32 = (2.0 * in.pos.x / in.screen_size.x - 1.0) * in.screen_width / 2.0;
+    // let u: f32 = (in.pos.x / in.screen_size.x);
     let v: f32 = (1.0 - 2.0 * (in.screen_size.y - in.pos.y) / in.screen_size.y) * in.screen_height / 2.0;
 
-    if u < 0 {
-        return vec4<f32>(-u, 0.0, 0.0, 1.0);
-    }
-    else {
-        return vec4<f32>(0.0, 0.0, u, 1.0);
-    }
-
-    // // Create ray and ray direction vector
-    // var ray_direction: vec3<f32> = vec3<f32>(u, v, -1.0);
-    // ray_direction = normalize(ray_direction);
-
-    // let max_steps: u32 = 500u;
-    // let max_distance: f32 = 500.0;
-    // var distance_traveled: f32 = 0.0;
-    // for (var i: u32 = 0u; i < max_steps; i = i + 1u) {
-    //     let origin: vec3<f32> = in.camera_position;
-    //     let ray_position: vec3<f32> = origin + ray_direction * distance_traveled;
-
-    //     var closest_distance: f32 = 100000.0;
-    //     for (var j: u32 = 0u; j < 6; j = j + 1u) {
-    //         let sphere: vec4<f32> = sphere_data[j];
-    //         let sphere_position: vec3<f32> = vec3<f32>(sphere.x, sphere.y, sphere.z);
-    //         let sphere_radius: f32 = sphere.w;
-
-    //         let distance: f32 = length(ray_position - sphere_position) - sphere_radius;
-    //         if (distance < closest_distance) {
-    //             closest_distance = distance;
-    //         }
-
-    //         if (distance < 0.1) {
-    //             return vec4<f32>(1.0, 0.0, 0.0, 1.0);
-    //         }
-    //     }
-
-    //     distance_traveled += closest_distance;
-    //     if (distance_traveled > max_distance) {
-    //         break;
-    //     }
+    // if u < 0 {
+    //     return vec4<f32>(-u, 0.0, 0.0, 1.0);
+    // }
+    // else {
+    //     return vec4<f32>(0.0, 0.0, u, 1.0);
     // }
 
-    // return vec4<f32>(0.0, 0.0, 0.0, 1.0);
+    // Create ray and ray direction vector
+    var ray_direction: vec3<f32> = vec3<f32>(u, v, -1.0);
+    ray_direction = normalize(ray_direction);
+
+    let max_steps: u32 = 500u;
+    let max_distance: f32 = 500.0;
+    var distance_traveled: f32 = 0.0;
+    for (var i: u32 = 0u; i < max_steps; i = i + 1u) {
+        let origin: vec3<f32> = in.camera_position;
+        let ray_position: vec3<f32> = origin + ray_direction * distance_traveled;
+
+        var closest_distance: f32 = 100000.0;
+        for (var j: u32 = 0u; j < 6; j = j + 1u) {
+            let sphere: vec4<f32> = sphere_data[j];
+            let sphere_position: vec3<f32> = vec3<f32>(sphere.x, sphere.y, sphere.z);
+            let sphere_radius: f32 = sphere.w;
+
+            let distance: f32 = length(ray_position - sphere_position) - sphere_radius;
+            if (distance < closest_distance) {
+                closest_distance = distance;
+            }
+
+            if (distance < 0.1) {
+                return vec4<f32>(1.0, 0.0, 0.0, 1.0);
+            }
+        }
+
+        distance_traveled += closest_distance;
+        if (distance_traveled > max_distance) {
+            break;
+        }
+    }
+
+    return vec4<f32>(0.0, 0.0, 0.0, 1.0);
 }
