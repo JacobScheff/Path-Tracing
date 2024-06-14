@@ -85,15 +85,20 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
 fn calculate_ray_collision(ray: vec3<f32>, sphere_centers: array<vec3<f32>, 6>, sphere_radii: array<f32, 6>) -> HitInfo {
     var closest_hit: HitInfo;
-    // closest_hit.did_hit = false;
-    // closest_hit.distance = 1000000.0;
+    closest_hit.did_hit = false;
+    closest_hit.distance = 1000000.0;
 
+    for (var i = 0u; i < 6u; i = i + 1u) {
+        let abc = 2;
+        var sphere_center = sphere_centers[abc];
+        // var sphere_radius = sphere_radii[i];
 
-    // for (var i = 0; i < 6; i = i + 1) {
-    //     var sphere_center = sphere_centers[i];
-    //     var sphere_radius = sphere_radii[i];
+        // var hit_info: HitInfo = ray_sphere(ray, sphere_center, sphere_radius);
 
-    // }
+        // if hit_info.did_hit && hit_info.distance < closest_hit.distance {
+        //     closest_hit = hit_info;
+        // }
+    }
 
     return closest_hit;
 }
