@@ -11,6 +11,24 @@ use winit::{
 
 const SCREEN_SIZE: (u32, u32) = (1200, 600);
 
+#[repr(C)]
+#[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+struct Sphere {
+    center: [f32; 3],
+    radius: f32,
+    color: [f32; 3],
+}
+
+impl Sphere {
+    fn new(center: [f32; 3], radius: f32, color: [f32; 3]) -> Self {
+        Self {
+            center,
+            radius,
+            color,
+        }
+    }
+}
+
 struct State<'a> {
     surface: wgpu::Surface<'a>,
     device: wgpu::Device,
@@ -180,17 +198,6 @@ enum CustomEvent {
 async fn run() {
     env_logger::init();
 
-    // Create sphere data
-    let sphere_centers: Vec<[f32; 3]> = vec![
-        [40.0, 0.0, 0.0],
-        [-40.0, 0.0, 0.0],
-        [0.0, 40.0, 0.0],
-        [0.0, -40.0, 0.0],
-        [0.0, 0.0, 40.0],
-        [0.0, 0.0, -40.0],
-    ];
-    let sphere_radii: Vec<f32> = vec![10.0; 6];
-
     let event_loop = EventLoopBuilder::<CustomEvent>::with_user_event()
         .build()
         .unwrap();
@@ -207,9 +214,17 @@ async fn run() {
 
     let mut state = State::new(&window).await;
 
+    // Create sphere data
+    let mut sphere_data: Vec<Sphere> = Vec::new();
+    sphere_data.push(Sphere::new([40.0, 0.0, 0.0], 10.0, [1.0, 0.0, 0.0]));
+    sphere_data.push(Sphere::new([-40.0, 0.0, 0.0], 10.0, [0.0, 1.0, 0.0]));
+    sphere_data.push(Sphere::new([0.0, 40.0, 0.0], 10.0, [0.0, 0.0, 1.0]));
+    sphere_data.push(Sphere::new([0.0, -40.0, 0.0], 10.0, [1.0, 1.0, 0.0]));
+    sphere_data.push(Sphere::new([0.0, 0.0, 40.0], 10.0, [0.0, 1.0, 1.0]));
+    sphere_data.push(Sphere::new([0.0, 0.0, -40.0], 10.0, [1.0, 0.0, 1.0]));
+
     // Create storage buffer for sphere data
-    let sphere_buffer_size =
-        (sphere_centers.len() * std::mem::size_of::<[f32; 4]>()) as wgpu::BufferAddress;
+    let sphere_buffer_size = (sphere_data.len() * std::mem::size_of::<Sphere>()) as wgpu::BufferAddress;
     let sphere_buffer = state.device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("Sphere Buffer"),
         size: sphere_buffer_size,
@@ -217,14 +232,12 @@ async fn run() {
         mapped_at_creation: false,
     });
 
-    // Combine center and radius into vec4 and copy to buffer
-    let mut sphere_data: Vec<[f32; 4]> = Vec::new();
-    for (i, center) in sphere_centers.iter().enumerate() {
-        sphere_data.push([center[0], center[1], center[2], sphere_radii[i]]);
-    }
-    state
-        .queue
-        .write_buffer(&sphere_buffer, 0, bytemuck::cast_slice(&sphere_data));
+    // Write sphere data to buffer
+    state.queue.write_buffer(
+        &sphere_buffer,
+        0,
+        bytemuck::cast_slice(&sphere_data),
+    );
 
     // Create bind group layout and bind group for sphere data
     let bind_group_layout =

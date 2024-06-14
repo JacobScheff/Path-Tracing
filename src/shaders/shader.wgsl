@@ -14,7 +14,13 @@ struct HitInfo {
     normal: vec3<f32>,
 };
 
-@group(0) @binding(0) var<storage, read> sphere_data : array<vec4<f32>>;
+struct Sphere {
+    center: vec3<f32>,
+    radius: f32,
+    color: vec3<f32>,
+};
+
+@group(0) @binding(0) var<storage, read> sphere_data : array<Sphere>;
 
 @vertex
 fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
@@ -76,8 +82,8 @@ fn calculate_ray_collision(ray_origin: vec3<f32>, ray_direction: vec3<f32>) -> H
 
     // Loop through each sphere in the storage buffer
     for (var i = 0u; i < 6u; i = i + 1u) {
-        var sphere_center: vec3<f32> = sphere_data[i].xyz;
-        var sphere_radius: f32 = sphere_data[i].w;
+        var sphere_center: vec3<f32> = sphere_data[i].center;
+        var sphere_radius: f32 = sphere_data[i].radius;
 
         var hit_info: HitInfo = ray_sphere(ray_origin, ray_direction, sphere_center, sphere_radius);
 
