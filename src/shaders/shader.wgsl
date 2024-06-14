@@ -60,59 +60,34 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     var ray_direction: vec3<f32> = vec3<f32>(u, v, -1.0);
     ray_direction = normalize(ray_direction);
 
-    // Check if the ray intersects a sphere
-    var hit_info: HitInfo = calculate_ray_collision(in.camera_position, ray_direction);
+    let max_steps: u32 = 500u;
+    let max_distance: f32 = 500.0;
+    var distance_traveled: f32 = 0.0;
+    for (var i: u32 = 0u; i < max_steps; i = i + 1u) {
+        let origin: vec3<f32> = in.camera_position;
+        let ray_position: vec3<f32> = origin + ray_direction * distance_traveled;
 
-    if(hit_info.did_hit) {
-        return vec4<f32>(1.0, 1.0, 1.0, 1.0);
+        var closest_distance: f32 = 100000.0;
+        for (var j: u32 = 0u; j < 6; j = j + 1u) {
+            let sphere: vec4<f32> = sphere_data[j];
+            let sphere_position: vec3<f32> = vec3<f32>(sphere.x, sphere.y, sphere.z);
+            let sphere_radius: f32 = sphere.w;
+
+            let distance: f32 = length(ray_position - sphere_position) - sphere_radius;
+            if (distance < closest_distance) {
+                closest_distance = distance;
+            }
+
+            if (distance < 0.1) {
+                return vec4<f32>(1.0, 0.0, 0.0, 1.0);
+            }
+        }
+
+        distance_traveled += closest_distance;
+        if (distance_traveled > max_distance) {
+            break;
+        }
     }
-    
+
     return vec4<f32>(0.0, 0.0, 0.0, 1.0);
-}
-
-fn calculate_ray_collision(ray_origin: vec3<f32>, ray_direction: vec3<f32>) -> HitInfo {
-    var closest_hit: HitInfo;
-    closest_hit.did_hit = false;
-    closest_hit.distance = 1000000.0;
-
-    // Loop through each sphere in the storage buffer
-    for (var i = 0u; i < 6u; i = i + 1u) {
-        var sphere_center: vec3<f32> = sphere_data[i].xyz;
-        var sphere_radius: f32 = sphere_data[i].w;
-
-        var hit_info: HitInfo = ray_sphere(ray_origin, ray_direction, sphere_center, sphere_radius);
-
-        if hit_info.did_hit && hit_info.distance < closest_hit.distance {
-            closest_hit = hit_info;
-        }
-    }
-
-    return closest_hit;
-}
-
-fn ray_sphere(ray_origin: vec3<f32>, ray_direction: vec3<f32>, sphere_center: vec3<f32>, sphere_radius: f32) -> HitInfo {
-    var hit_info: HitInfo;
-    hit_info.did_hit = false;
-
-    var offset_ray_origin: vec3<f32> = ray_origin - sphere_center;
-    let a: f32 = dot(ray_direction, ray_direction);
-    let b = 2.0 * dot(offset_ray_origin, ray_direction);
-    let c = dot(offset_ray_origin, offset_ray_origin) - sphere_radius * sphere_radius;
-    let discriminant = b * b - 4.0 * a * c;
-
-    // No solution when d < 0 (ray misses sphere)
-    if discriminant >= 0.0 {
-        // Distance to nearest interesction point
-        let distance: f32 = (-b - sqrt(discriminant)) / (2.0 * a);
-
-        // Ignore intersections that occur behind the ray
-        if distance >= 0.0 {
-            hit_info.did_hit = true;
-            hit_info.distance = distance;
-            hit_info.position = ray_origin + ray_direction * distance;
-            hit_info.normal = normalize(hit_info.position - sphere_center);
-        }
-    }
-
-    return hit_info;
 }
