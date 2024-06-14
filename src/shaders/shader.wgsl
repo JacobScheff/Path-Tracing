@@ -57,9 +57,8 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let v: f32 = (1.0 - 2.0 * in.pos.y / in.screen_size.y) * in.screen_height / 2.0;
 
     // Create ray and ray direction vector
-    var ray: vec3<f32> = vec3<f32>(u, v, -1.0);
-    ray = normalize(ray);
-    var ray_direction = ray;
+    var ray_direction: vec3<f32> = vec3<f32>(u, v, -1.0);
+    ray_direction = normalize(ray_direction);
 
     // Check if the ray intersects a sphere
     var hit_info: HitInfo = calculate_ray_collision(in.camera_position, ray_direction);
