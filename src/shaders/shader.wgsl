@@ -33,7 +33,7 @@ fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
     var screen_size: vec2<f32> = vec2<f32>(12000.0, 600.0);
     var fov: f32 = 60.0 * 3.14159 / 180.0;
     var aspect_ratio: f32 = screen_size.x / screen_size.y;
-    var screen_width: f32 = tan(fov / 2.0) * 2.0;
+    var screen_width: f32 = tan(fov * 0.5) * 2.0;
     var screen_height: f32 = screen_width / aspect_ratio;
     var camera_position: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
     var camera_rotation: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
@@ -114,7 +114,6 @@ fn ray_sphere(ray_origin: vec3<f32>, ray_direction: vec3<f32>, sphere_center: ve
             hit_info.normal = normalize(hit_info.position - sphere_center);
         }
     }
-
 
     return hit_info;
 }
