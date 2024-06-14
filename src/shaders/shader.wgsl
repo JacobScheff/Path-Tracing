@@ -35,8 +35,8 @@ fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
     var aspect_ratio: f32 = screen_size.x / screen_size.y;
     var screen_width: f32 = tan(fov * 0.5) * 2.0;
     var screen_height: f32 = screen_width / aspect_ratio;
-    var camera_position: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
-    var camera_rotation: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
+    var camera_position: vec3<f32> = vec3<f32>(90.0, 90.0, 130.0);
+    var camera_rotation: vec3<f32> = vec3<f32>(-28, 30.0, 0.0);
 
     var out: VertexOutput;
     out.pos = vec4<f32>(positions[i], 0.0, 1.0);
@@ -54,11 +54,14 @@ fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     // Map pixel coordinates to screen plane coordinates
     let u: f32 = (2.0 * in.pos.x / in.screen_size.x - 1.0) * in.screen_width / 2.0;
-    let v: f32 = (1.0 - 2.0 * (in.screen_size.y - in.pos.y) / in.screen_size.y) * in.screen_height / 2.0; // y=0 should be at the bottom
+    let v: f32 = (1.0 - 2.0 * in.pos.y / in.screen_size.y) * in.screen_height / 2.0;
 
     // Create ray and ray direction vector
     var ray_direction: vec3<f32> = vec3<f32>(u, v, -1.0);
     ray_direction = normalize(ray_direction);
+
+    // Rotate ray direction vector
+    ray_direction = rotate_vector(ray_direction, in.camera_rotation);
 
     // Check if the ray intersects a sphere
     var hit_info: HitInfo = calculate_ray_collision(in.camera_position, ray_direction);
@@ -115,4 +118,27 @@ fn ray_sphere(ray_origin: vec3<f32>, ray_direction: vec3<f32>, sphere_center: ve
     }
 
     return hit_info;
+}
+
+fn rotate_vector(ray: vec3<f32>, angles: vec3<f32>) -> vec3<f32> {
+    let x = ray.x;
+    let y = ray.y;
+    let z = ray.z;
+
+    let a = angles.x * 3.14159 / 180.0;
+    let b = angles.y * 3.14159 / 180.0;
+    let c = angles.z * 3.14159 / 180.0;
+
+    let cos_a = cos(a);
+    let sin_a = sin(a);
+    let cos_b = cos(b);
+    let sin_b = sin(b);
+    let cos_c = cos(c);
+    let sin_c = sin(c);
+
+    let x_rot = x * cos_c * cos_b + y * (cos_c * sin_b * sin_a - sin_c * cos_a) + z * (cos_c * sin_b * cos_a + sin_c * sin_a);
+    let y_rot = x * sin_c * cos_b + y * (sin_c * sin_b * sin_a + cos_c * cos_a) + z * (sin_c * sin_b * cos_a - cos_c * sin_a);
+    let z_rot = -x * sin_b + y * cos_b * sin_a + z * cos_b * cos_a;
+
+    return vec3<f32>(x_rot, y_rot, z_rot);
 }
