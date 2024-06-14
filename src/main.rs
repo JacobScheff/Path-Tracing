@@ -75,6 +75,16 @@ impl<'a> State<'a> {
         pipeline_builder.set_pixel_format(config.format);
         let render_pipeline = pipeline_builder.build_pipeline(&device);
 
+        // Create a temporary bind group
+        let temp_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("Temporary Bind Group"),
+            layout: &device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[],
+                label: Some("Temporary Bind Group Layout"),
+            }),
+            entries: &[],
+        });
+
         Self {
             window,
             surface,
@@ -83,13 +93,7 @@ impl<'a> State<'a> {
             config,
             size,
             render_pipeline,
-            bind_group: device.create_bind_group(
-                &wgpu::BindGroupDescriptor { // Create empty descriptor
-                    label: None,
-                    layout: &bind_group_layout, // Needs to be valid layout
-                    entries: &[],
-                }
-            ),
+            bind_group: temp_bind_group,
         }
     }
 
