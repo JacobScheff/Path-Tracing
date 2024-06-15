@@ -54,37 +54,31 @@ fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    if(abs(sphere_data[1].center.x + 40.0) <= 0.1){
-        return vec4<f32>(0.0, 0.0, 1.0, 1.0);
+    // Map pixel coordinates to screen plane coordinates
+    let u: f32 = (2.0 * in.pos.x / in.screen_size.x - 1.0) * in.screen_width / 2.0;
+    let v: f32 = (1.0 - 2.0 * in.pos.y / in.screen_size.y) * in.screen_height / 2.0;
+
+    // Create ray and ray direction vector
+    var ray_direction: vec3<f32> = vec3<f32>(u, v, -1.0);
+    ray_direction = normalize(ray_direction);
+
+    // Rotate ray direction vector
+    ray_direction = rotate_vector(ray_direction, in.camera_rotation);
+
+    // Check if the ray intersects a sphere
+    var hit_info: HitInfo = calculate_ray_collision(in.camera_position, ray_direction);
+
+    // Return the color of the closest hit sphere
+    if(hit_info.did_hit) {
+        // Find the sphere that was hit
+        for (var i = 0u; i < 6u; i = i + 1u) {
+            if (distance(hit_info.position, sphere_data[i].center) < sphere_data[i].radius + 0.1) {
+                return vec4<f32>(sphere_data[i].color, 1.0);
+            }
+        }
     }
-
-    return vec4<f32>(1.0, 0.0, 0.0, 1.0);
-
-    // // Map pixel coordinates to screen plane coordinates
-    // let u: f32 = (2.0 * in.pos.x / in.screen_size.x - 1.0) * in.screen_width / 2.0;
-    // let v: f32 = (1.0 - 2.0 * in.pos.y / in.screen_size.y) * in.screen_height / 2.0;
-
-    // // Create ray and ray direction vector
-    // var ray_direction: vec3<f32> = vec3<f32>(u, v, -1.0);
-    // ray_direction = normalize(ray_direction);
-
-    // // Rotate ray direction vector
-    // ray_direction = rotate_vector(ray_direction, in.camera_rotation);
-
-    // // Check if the ray intersects a sphere
-    // var hit_info: HitInfo = calculate_ray_collision(in.camera_position, ray_direction);
-
-    // // Return the color of the closest hit sphere
-    // if(hit_info.did_hit) {
-    //     // Find the sphere that was hit
-    //     for (var i = 0u; i < 6u; i = i + 1u) {
-    //         if (distance(hit_info.position, sphere_data[i].center) < sphere_data[i].radius + 0.1) {
-    //             return vec4<f32>(sphere_data[i].color, 1.0);
-    //         }
-    //     }
-    // }
     
-    // return vec4<f32>(0.0, 0.0, 0.0, 1.0);
+    return vec4<f32>(0.0, 0.0, 0.0, 1.0);
 }
 
 fn calculate_ray_collision(ray_origin: vec3<f32>, ray_direction: vec3<f32>) -> HitInfo {

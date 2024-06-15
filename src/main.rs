@@ -1,6 +1,6 @@
 use renderer_backend::pipeline_builder::PipelineBuilder;
 mod renderer_backend;
-use wgpu::{util::BufferInitDescriptor, BufferUsages};
+use wgpu::{util::{BufferInitDescriptor, DeviceExt}, BufferUsages};
 use winit::{
     dpi::PhysicalSize,
     event::*,
@@ -224,13 +224,13 @@ async fn run() {
     sphere_data.push(Sphere::new([0.0, 0.0, -40.0], 10.0, [1.0, 0.0, 1.0]));
 
     // Create storage buffer for sphere data
-    let sphere_buffer_size = (sphere_data.len() * std::mem::size_of::<Sphere>()) as wgpu::BufferAddress;
-    let sphere_buffer = state.device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("Sphere Buffer"),
-        size: sphere_buffer_size,
-        usage: BufferUsages::STORAGE | BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
+    let sphere_buffer = state.device.create_buffer_init(
+        &BufferInitDescriptor {
+            label: Some("Sphere Buffer Data"),
+            contents: bytemuck::cast_slice(&sphere_data), 
+            usage: BufferUsages::STORAGE | BufferUsages::COPY_DST, 
+        }
+    );
 
     // Write sphere data to buffer
     state.queue.write_buffer(
