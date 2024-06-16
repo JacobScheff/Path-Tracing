@@ -12,6 +12,7 @@ struct HitInfo {
     distance: f32,
     position: vec3<f32>,
     normal: vec3<f32>,
+    color: vec3<f32>,
 };
 
 @group(0) @binding(0) var<storage, read> sphere_data : array<array<f32, 7>, 6>;
@@ -64,13 +65,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
     // Return the color of the closest hit sphere
     if(hit_info.did_hit) {
-        // Find the sphere that was hit
-        for (var i = 0u; i < 6u; i = i + 1u) {
-            var sphere_center: vec3<f32> = vec3<f32>(sphere_data[i][0], sphere_data[i][1], sphere_data[i][2]);
-            if (distance(hit_info.position, sphere_center) < sphere_data[i][3] + 0.1) {
-                return vec4<f32>(sphere_data[i][4], sphere_data[i][5], sphere_data[i][6], 1.0);
-            }
-        }
+        return vec4<f32>(hit_info.color, 1.0);
     }
     
     return vec4<f32>(0.0, 0.0, 0.0, 1.0);
@@ -86,7 +81,7 @@ fn calculate_ray_collision(ray_origin: vec3<f32>, ray_direction: vec3<f32>) -> H
         var sphere_center: vec3<f32> = vec3<f32>(sphere_data[i][0], sphere_data[i][1], sphere_data[i][2]);
         var sphere_radius: f32 = sphere_data[i][3];
 
-        var hit_info: HitInfo = ray_sphere(ray_origin, ray_direction, sphere_center, sphere_radius);
+        var hit_info: HitInfo = ray_sphere(ray_origin, ray_direction, sphere_data[i]);
 
         if hit_info.did_hit && hit_info.distance < closest_hit.distance {
             closest_hit = hit_info;
@@ -96,7 +91,11 @@ fn calculate_ray_collision(ray_origin: vec3<f32>, ray_direction: vec3<f32>) -> H
     return closest_hit;
 }
 
-fn ray_sphere(ray_origin: vec3<f32>, ray_direction: vec3<f32>, sphere_center: vec3<f32>, sphere_radius: f32) -> HitInfo {
+fn ray_sphere(ray_origin: vec3<f32>, ray_direction: vec3<f32>, sphere: array<f32, 7>) -> HitInfo {
+    var sphere_center: vec3<f32> = vec3<f32>(sphere[0], sphere[1], sphere[2]);
+    var sphere_radius: f32 = sphere[3];
+    var sphere_color: vec3<f32> = vec3<f32>(sphere[4], sphere[5], sphere[6]);
+
     var hit_info: HitInfo;
     hit_info.did_hit = false;
 
@@ -117,6 +116,7 @@ fn ray_sphere(ray_origin: vec3<f32>, ray_direction: vec3<f32>, sphere_center: ve
             hit_info.distance = distance;
             hit_info.position = ray_origin + ray_direction * distance;
             hit_info.normal = normalize(hit_info.position - sphere_center);
+            hit_info.color = sphere_color;
         }
     }
 
