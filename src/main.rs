@@ -11,24 +11,6 @@ use winit::{
 
 const SCREEN_SIZE: (u32, u32) = (1200, 600);
 
-// #[repr(C)]
-// #[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
-// struct Sphere {
-//     center: [f32; 3],
-//     radius: f32,
-//     color: [f32; 3],
-// }
-
-// impl Sphere {
-//     fn new(center: [f32; 3], radius: f32, color: [f32; 3]) -> Self {
-//         Self {
-//             center,
-//             radius,
-//             color,
-//         }
-//     }
-// }
-
 struct State<'a> {
     surface: wgpu::Surface<'a>,
     device: wgpu::Device,
@@ -214,14 +196,7 @@ async fn run() {
 
     let mut state = State::new(&window).await;
 
-    // Create sphere data
-    // let mut sphere_data: Vec<Sphere> = Vec::new();
-    // sphere_data.push(Sphere::new([40.0, 0.0, 0.0], 10.0, [1.0, 0.0, 0.0]));
-    // sphere_data.push(Sphere::new([-40.0, 0.0, 0.0], 10.0, [0.0, 1.0, 0.0]));
-    // sphere_data.push(Sphere::new([0.0, 40.0, 0.0], 10.0, [0.0, 0.0, 1.0]));
-    // sphere_data.push(Sphere::new([0.0, -40.0, 0.0], 10.0, [1.0, 1.0, 0.0]));
-    // sphere_data.push(Sphere::new([0.0, 0.0, 40.0], 10.0, [0.0, 1.0, 1.0]));
-    // sphere_data.push(Sphere::new([0.0, 0.0, -40.0], 10.0, [1.0, 0.0, 1.0]));
+    // Create sphere data - Format: [x, y, z, radius, r, g, b]
     let mut sphere_data: Vec<Vec<f32>> = Vec::new();
     sphere_data.push(vec![40.0, 0.0, 0.0, 10.0, 1.0, 0.0, 0.0]);
     sphere_data.push(vec![-40.0, 0.0, 0.0, 10.0, 0.0, 1.0, 0.0]);
