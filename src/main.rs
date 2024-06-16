@@ -11,23 +11,23 @@ use winit::{
 
 const SCREEN_SIZE: (u32, u32) = (1200, 600);
 
-#[repr(C)]
-#[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
-struct Sphere {
-    center: [f32; 3],
-    radius: f32,
-    color: [f32; 3],
-}
+// #[repr(C)]
+// #[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+// struct Sphere {
+//     center: [f32; 3],
+//     radius: f32,
+//     color: [f32; 3],
+// }
 
-impl Sphere {
-    fn new(center: [f32; 3], radius: f32, color: [f32; 3]) -> Self {
-        Self {
-            center,
-            radius,
-            color,
-        }
-    }
-}
+// impl Sphere {
+//     fn new(center: [f32; 3], radius: f32, color: [f32; 3]) -> Self {
+//         Self {
+//             center,
+//             radius,
+//             color,
+//         }
+//     }
+// }
 
 struct State<'a> {
     surface: wgpu::Surface<'a>,
@@ -215,19 +215,28 @@ async fn run() {
     let mut state = State::new(&window).await;
 
     // Create sphere data
-    let mut sphere_data: Vec<Sphere> = Vec::new();
-    sphere_data.push(Sphere::new([40.0, 0.0, 0.0], 10.0, [1.0, 0.0, 0.0]));
-    sphere_data.push(Sphere::new([-40.0, 0.0, 0.0], 10.0, [0.0, 1.0, 0.0]));
-    sphere_data.push(Sphere::new([0.0, 40.0, 0.0], 10.0, [0.0, 0.0, 1.0]));
-    sphere_data.push(Sphere::new([0.0, -40.0, 0.0], 10.0, [1.0, 1.0, 0.0]));
-    sphere_data.push(Sphere::new([0.0, 0.0, 40.0], 10.0, [0.0, 1.0, 1.0]));
-    sphere_data.push(Sphere::new([0.0, 0.0, -40.0], 10.0, [1.0, 0.0, 1.0]));
+    // let mut sphere_data: Vec<Sphere> = Vec::new();
+    // sphere_data.push(Sphere::new([40.0, 0.0, 0.0], 10.0, [1.0, 0.0, 0.0]));
+    // sphere_data.push(Sphere::new([-40.0, 0.0, 0.0], 10.0, [0.0, 1.0, 0.0]));
+    // sphere_data.push(Sphere::new([0.0, 40.0, 0.0], 10.0, [0.0, 0.0, 1.0]));
+    // sphere_data.push(Sphere::new([0.0, -40.0, 0.0], 10.0, [1.0, 1.0, 0.0]));
+    // sphere_data.push(Sphere::new([0.0, 0.0, 40.0], 10.0, [0.0, 1.0, 1.0]));
+    // sphere_data.push(Sphere::new([0.0, 0.0, -40.0], 10.0, [1.0, 0.0, 1.0]));
+    let mut sphere_data: Vec<Vec<f32>> = Vec::new();
+    sphere_data.push(vec![40.0, 0.0, 0.0, 10.0, 1.0, 0.0, 0.0]);
+    sphere_data.push(vec![-40.0, 0.0, 0.0, 10.0, 0.0, 1.0, 0.0]);
+    sphere_data.push(vec![0.0, 40.0, 0.0, 10.0, 0.0, 0.0, 1.0]);
+    sphere_data.push(vec![0.0, -40.0, 0.0, 10.0, 1.0, 1.0, 0.0]);
+    sphere_data.push(vec![0.0, 0.0, 40.0, 10.0, 0.0, 1.0, 1.0]);
+    sphere_data.push(vec![0.0, 0.0, -40.0, 10.0, 1.0, 0.0, 1.0]);
+
+    let sphere_data_u8: Vec<u8> = sphere_data.iter().flat_map(|s| s.iter().map(|f| f.to_ne_bytes().to_vec()).flatten()).collect();
 
     // Create storage buffer for sphere data
     let sphere_buffer = state.device.create_buffer_init(
         &BufferInitDescriptor {
             label: Some("Sphere Buffer Data"),
-            contents: bytemuck::cast_slice(&sphere_data), 
+            contents: bytemuck::cast_slice(&sphere_data_u8),
             usage: BufferUsages::STORAGE | BufferUsages::COPY_DST, 
         }
     );
@@ -236,7 +245,7 @@ async fn run() {
     state.queue.write_buffer(
         &sphere_buffer,
         0,
-        bytemuck::cast_slice(&sphere_data),
+        bytemuck::cast_slice(&sphere_data_u8),
     );
 
     // Create bind group layout and bind group for sphere data
