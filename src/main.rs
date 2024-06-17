@@ -10,6 +10,7 @@ use winit::{
 };
 
 const SCREEN_SIZE: (u32, u32) = (1200, 600);
+const TIME_BETWEEN_FRAMES: u64 = 1000; // 17
 
 struct State<'a> {
     surface: wgpu::Surface<'a>,
@@ -190,7 +191,7 @@ async fn run() {
     let event_loop_proxy = event_loop.create_proxy();
 
     std::thread::spawn(move || loop {
-        std::thread::sleep(std::time::Duration::from_millis(17));
+        std::thread::sleep(std::time::Duration::from_millis(TIME_BETWEEN_FRAMES));
         event_loop_proxy.send_event(CustomEvent::Timer).ok();
     });
 
@@ -204,7 +205,7 @@ async fn run() {
     sphere_data.push(vec![0.0, -40.0, 0.0, 10.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
     sphere_data.push(vec![0.0, 0.0, 40.0, 10.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0]);
     sphere_data.push(vec![0.0, 0.0, -40.0, 10.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0]);
-    sphere_data.push(vec![0.0, 0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2.0]); // Light source
+    sphere_data.push(vec![0.0, 0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8.0]); // Light source
 
     let sphere_data_u8: Vec<u8> = sphere_data.iter().flat_map(|s| s.iter().map(|f| f.to_ne_bytes().to_vec()).flatten()).collect();
 
