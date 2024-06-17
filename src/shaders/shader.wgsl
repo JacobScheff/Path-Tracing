@@ -49,26 +49,29 @@ fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    // Map pixel coordinates to screen plane coordinates
-    let u: f32 = (2.0 * in.pos.x / in.screen_size.x - 1.0) * in.screen_width / 2.0;
-    let v: f32 = (1.0 - 2.0 * in.pos.y / in.screen_size.y) * in.screen_height / 2.0;
+    let pixel_index: u32 = u32(in.pos.x + in.pos.y * in.screen_size.x);
+    let rand: f32 = random(pixel_index * pixel_index * 100u);
+    return vec4<f32>(rand, rand, rand, 1.0);
+    // // Map pixel coordinates to screen plane coordinates
+    // let u: f32 = (2.0 * in.pos.x / in.screen_size.x - 1.0) * in.screen_width / 2.0;
+    // let v: f32 = (1.0 - 2.0 * in.pos.y / in.screen_size.y) * in.screen_height / 2.0;
 
-    // Create ray and ray direction vector
-    var ray_direction: vec3<f32> = vec3<f32>(u, v, -1.0);
-    ray_direction = normalize(ray_direction);
+    // // Create ray and ray direction vector
+    // var ray_direction: vec3<f32> = vec3<f32>(u, v, -1.0);
+    // ray_direction = normalize(ray_direction);
 
-    // Rotate ray direction vector
-    ray_direction = rotate_vector(ray_direction, in.camera_rotation);
+    // // Rotate ray direction vector
+    // ray_direction = rotate_vector(ray_direction, in.camera_rotation);
 
-    // Check if the ray intersects a sphere
-    var hit_info: HitInfo = calculate_ray_collision(in.camera_position, ray_direction);
+    // // Check if the ray intersects a sphere
+    // var hit_info: HitInfo = calculate_ray_collision(in.camera_position, ray_direction);
 
-    // Return the color of the closest hit sphere
-    if(hit_info.did_hit) {
-        return vec4<f32>(hit_info.color, 1.0);
-    }
+    // // Return the color of the closest hit sphere
+    // if(hit_info.did_hit) {
+    //     return vec4<f32>(hit_info.color, 1.0);
+    // }
     
-    return vec4<f32>(0.0, 0.0, 0.0, 1.0);
+    // return vec4<f32>(0.0, 0.0, 0.0, 1.0);
 }
 
 fn calculate_ray_collision(ray_origin: vec3<f32>, ray_direction: vec3<f32>) -> HitInfo {
@@ -144,4 +147,14 @@ fn rotate_vector(ray: vec3<f32>, angles: vec3<f32>) -> vec3<f32> {
     let z_rot = -x * sin_b + y * cos_b * sin_a + z * cos_b * cos_a;
 
     return vec3<f32>(x_rot, y_rot, z_rot);
+}
+
+// Function to generate a random number between 0 and 1
+fn random(seed: u32) -> f32 
+{
+  var state = seed;
+  state = state ^ (state << 13);
+  state = state ^ (state >> 17);
+  state = state ^ (state << 5);
+  return f32(state) / 4294967296.0;  // Normalize to [0, 1)
 }
