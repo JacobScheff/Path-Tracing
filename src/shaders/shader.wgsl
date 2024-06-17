@@ -25,6 +25,7 @@ struct Ray {
 const sphere_count: u32 = 7; // Number of spheres in the scene
 const nums_per_sphere: u32 = 11; // Number of values per sphere in the storage buffer
 const max_bounce_count: u32 = 8; // Max bounces per ray
+const rays_per_pixel: u32 = 100; // Number of rays per pixel
 
 @group(0) @binding(0) var<storage, read> sphere_data : array<array<f32, nums_per_sphere>, sphere_count>;
 
@@ -78,7 +79,6 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     ray.dir = ray_direction;
 
     // Calculate pixel color
-    let rays_per_pixel: u32 = 10u;
     var pixel_color: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
     for (var i: u32 = 0u; i < rays_per_pixel; i = i + 1u) {
         pixel_color += trace(ray, pixel_index + i * 248135);
@@ -86,7 +86,6 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     pixel_color /= f32(rays_per_pixel);
     
     return vec4<f32>(pixel_color, 1.0);
-    // return vec4<f32>(0.0, 0.0, 1.0, 1.0);
 }
 
 fn trace(ray_in: Ray, seed: u32) -> vec3<f32> {
