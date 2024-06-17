@@ -203,7 +203,7 @@ fn random_value(seed: u32) -> f32
 fn random_normal(seed: u32) -> f32
 {
   var u1 = random_value(seed);
-  var u2 = random_value(seed + 1);
+  var u2 = random_value(seed * 7462);
   return sqrt(-2.0 * log(u1)) * cos(2.0 * 3.14159 * u2);
 }
 
