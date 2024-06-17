@@ -10,7 +10,7 @@ use winit::{
 };
 
 const SCREEN_SIZE: (u32, u32) = (1200, 600);
-const TIME_BETWEEN_FRAMES: u64 = 1000; // 17
+const TIME_BETWEEN_FRAMES: u64 = 17;
 
 struct State<'a> {
     surface: wgpu::Surface<'a>,
@@ -21,6 +21,10 @@ struct State<'a> {
     window: &'a Window,
     render_pipeline: wgpu::RenderPipeline,
     bind_group: wgpu::BindGroup,
+    previous_frame_texture: wgpu::Texture,
+    previous_frame_view: wgpu::TextureView,
+    previous_frame_bind_group: wgpu::BindGroup,
+    previous_frame_bind_group_layout: wgpu::BindGroupLayout,
 }
 
 impl<'a> State<'a> {
@@ -86,13 +90,6 @@ impl<'a> State<'a> {
             label: Some("Sphere Bind Group Layout"),
         });
 
-        // Pass bind group layout to pipeline builder
-        let mut pipeline_builder = PipelineBuilder::new();
-        pipeline_builder.set_shader_module("shaders/shader.wgsl", "vs_main", "fs_main");
-        pipeline_builder.set_pixel_format(config.format);
-        pipeline_builder.set_bind_group_layout(bind_group_layout);
-        let render_pipeline = pipeline_builder.build_pipeline(&device);
-
         // Create a temporary bind group
         let temp_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("Temporary Bind Group"),
@@ -103,6 +100,73 @@ impl<'a> State<'a> {
             entries: &[],
         });
 
+        // Texture to hold the previous frame's data
+        let previous_frame_texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("Previous Frame Texture"),
+            size: wgpu::Extent3d {
+                width: config.width,
+                height: config.height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: config.format, // Use the same format as your surface
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
+            view_formats: &[],
+        });
+
+        // Create a view for the previous frame texture
+        let previous_frame_view = previous_frame_texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+        // Create a bind group layout for the previous frame texture
+        let previous_frame_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1, // Choose a different binding index than your sphere data
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+                // Add a sampler binding if needed
+                wgpu::BindGroupLayoutEntry {
+                    binding: 2,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: None,
+                },
+            ],
+            label: Some("Previous Frame Bind Group Layout"),
+        });
+
+        // Create the bind group for the previous frame texture
+        let previous_frame_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &previous_frame_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::TextureView(&previous_frame_view), 
+                },
+                // Add a sampler if needed
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::Sampler(&device.create_sampler(&wgpu::SamplerDescriptor::default())),
+                },
+            ],
+            label: Some("Previous Frame Bind Group"),
+        });
+
+        // Pass bind group layout to pipeline builder
+        let mut pipeline_builder = PipelineBuilder::new();
+        pipeline_builder.set_shader_module("shaders/shader.wgsl", "vs_main", "fs_main");
+        pipeline_builder.set_pixel_format(config.format);
+        pipeline_builder.set_bind_group_layout(bind_group_layout);
+        let render_pipeline = pipeline_builder.build_pipeline(&device, &previous_frame_bind_group_layout);        
+
         Self {
             window,
             surface,
@@ -112,6 +176,10 @@ impl<'a> State<'a> {
             size,
             render_pipeline,
             bind_group: temp_bind_group,
+            previous_frame_texture,
+            previous_frame_view,
+            previous_frame_bind_group,
+            previous_frame_bind_group_layout,
         }
     }
 
@@ -137,7 +205,7 @@ impl<'a> State<'a> {
             .create_command_encoder(&command_encoder_descriptor);
         let color_attachment = wgpu::RenderPassColorAttachment {
             view: &image_view,
-            resolve_target: None,
+            resolve_target: Some(&self.previous_frame_view), // Update previous frame
             ops: wgpu::Operations {
                 load: wgpu::LoadOp::Clear(wgpu::Color {
                     r: 0.75,
@@ -160,7 +228,8 @@ impl<'a> State<'a> {
         {
             let mut render_pass = command_encoder.begin_render_pass(&render_pass_descriptor);
             render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.set_bind_group(0, &self.bind_group, &[]); // Access using self
+            render_pass.set_bind_group(0, &self.bind_group, &[]); // Bind sphere data
+            render_pass.set_bind_group(1, &self.previous_frame_bind_group, &[]); // Bind previous frame texture
             render_pass.draw(0..3, 0..1); // Draw the first triangle
             render_pass.draw(3..6, 0..1); // Draw the second triangle
         }
@@ -256,7 +325,7 @@ async fn run() {
     pipeline_builder.set_shader_module("shaders/shader.wgsl", "vs_main", "fs_main");
     pipeline_builder.set_pixel_format(state.config.format);
     pipeline_builder.set_bind_group_layout(bind_group_layout);
-    state.render_pipeline = pipeline_builder.build_pipeline(&state.device);
+    state.render_pipeline = pipeline_builder.build_pipeline(&state.device, &state.previous_frame_bind_group_layout);
 
     event_loop
         .run(move |event, elwt| match event {
