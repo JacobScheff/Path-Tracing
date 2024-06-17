@@ -196,14 +196,14 @@ async fn run() {
 
     let mut state = State::new(&window).await;
 
-    // Create sphere data - Format: [x, y, z, radius, r, g, b]
+    // Create sphere data - Format: [x, y, z, radius, r, g, b, er, eg, eb, emission_strength]
     let mut sphere_data: Vec<Vec<f32>> = Vec::new();
-    sphere_data.push(vec![40.0, 0.0, 0.0, 10.0, 1.0, 0.0, 0.0]);
-    sphere_data.push(vec![-40.0, 0.0, 0.0, 10.0, 0.0, 1.0, 0.0]);
-    sphere_data.push(vec![0.0, 40.0, 0.0, 10.0, 0.0, 0.0, 1.0]);
-    sphere_data.push(vec![0.0, -40.0, 0.0, 10.0, 1.0, 1.0, 0.0]);
-    sphere_data.push(vec![0.0, 0.0, 40.0, 10.0, 0.0, 1.0, 1.0]);
-    sphere_data.push(vec![0.0, 0.0, -40.0, 10.0, 1.0, 0.0, 1.0]);
+    sphere_data.push(vec![40.0, 0.0, 0.0, 10.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+    sphere_data.push(vec![-40.0, 0.0, 0.0, 10.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+    sphere_data.push(vec![0.0, 40.0, 0.0, 10.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0]);
+    sphere_data.push(vec![0.0, -40.0, 0.0, 10.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0]);
+    sphere_data.push(vec![0.0, 0.0, 40.0, 10.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0]);
+    sphere_data.push(vec![0.0, 0.0, -40.0, 10.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0]);
 
     let sphere_data_u8: Vec<u8> = sphere_data.iter().flat_map(|s| s.iter().map(|f| f.to_ne_bytes().to_vec()).flatten()).collect();
 

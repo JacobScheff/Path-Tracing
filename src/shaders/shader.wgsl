@@ -13,13 +13,24 @@ struct HitInfo {
     position: vec3<f32>,
     normal: vec3<f32>,
     color: vec3<f32>,
+    emission_color: vec3<f32>,
+    emission_strength: f32,
 };
 
-@group(0) @binding(0) var<storage, read> sphere_data : array<array<f32, 7>, 6>;
+struct Ray {
+    origin: vec3<f32>,
+    dir: vec3<f32>,
+};
+
+const sphere_count: u32 = 6; // Number of spheres in the scene
+const nums_per_sphere: u32 = 11; // Number of values per sphere in the storage buffer
+const max_bounce_count: u32 = 8; // Max bounces per ray
+
+@group(0) @binding(0) var<storage, read> sphere_data : array<array<f32, nums_per_sphere>, sphere_count>;
 
 @vertex
 fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
-    var positions = array<vec2<f32>, 6>(
+    var positions = array<vec2<f32>, sphere_count>(
         vec2<f32>(-1.0, -1.0), // Bottom Left
         vec2<f32>(1.0, -1.0),  // Bottom Right
         vec2<f32>(-1.0, 1.0),   // Top Left
@@ -49,42 +60,69 @@ fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
+    // Map pixel coordinates to screen plane coordinates
+    let u: f32 = (2.0 * in.pos.x / in.screen_size.x - 1.0) * in.screen_width / 2.0;
+    let v: f32 = (1.0 - 2.0 * in.pos.y / in.screen_size.y) * in.screen_height / 2.0;
     let pixel_index: u32 = u32(in.pos.x + in.pos.y * in.screen_size.x);
-    let rand: f32 = random(pixel_index * pixel_index * 100u);
-    return vec4<f32>(rand, rand, rand, 1.0);
-    // // Map pixel coordinates to screen plane coordinates
-    // let u: f32 = (2.0 * in.pos.x / in.screen_size.x - 1.0) * in.screen_width / 2.0;
-    // let v: f32 = (1.0 - 2.0 * in.pos.y / in.screen_size.y) * in.screen_height / 2.0;
 
-    // // Create ray and ray direction vector
-    // var ray_direction: vec3<f32> = vec3<f32>(u, v, -1.0);
-    // ray_direction = normalize(ray_direction);
+    // Create ray and ray direction vector
+    var ray_direction: vec3<f32> = vec3<f32>(u, v, -1.0);
+    ray_direction = normalize(ray_direction);
 
-    // // Rotate ray direction vector
-    // ray_direction = rotate_vector(ray_direction, in.camera_rotation);
+    // Rotate ray direction vector
+    ray_direction = rotate_vector(ray_direction, in.camera_rotation);
 
-    // // Check if the ray intersects a sphere
-    // var hit_info: HitInfo = calculate_ray_collision(in.camera_position, ray_direction);
+    // Create ray
+    var ray: Ray;
+    ray.origin = in.camera_position;
+    ray.dir = ray_direction;
 
-    // // Return the color of the closest hit sphere
-    // if(hit_info.did_hit) {
-    //     return vec4<f32>(hit_info.color, 1.0);
-    // }
+    // Calculate pixel color
+    let rays_per_pixel: u32 = 10u;
+    var pixel_color: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
+    for (var i: u32 = 0u; i < rays_per_pixel; i = i + 1u) {
+        pixel_color += trace(ray, pixel_index + i * 248135);
+    }
+    pixel_color /= f32(rays_per_pixel);
     
-    // return vec4<f32>(0.0, 0.0, 0.0, 1.0);
+    return vec4<f32>(pixel_color, 1.0);
+    // return vec4<f32>(0.0, 0.0, 1.0, 1.0);
 }
 
-fn calculate_ray_collision(ray_origin: vec3<f32>, ray_direction: vec3<f32>) -> HitInfo {
+fn trace(ray_in: Ray, seed: u32) -> vec3<f32> {
+    var ray: Ray = ray_in;
+
+    var incoming_light: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
+    var ray_color: vec3<f32> = vec3<f32>(1.0, 1.0, 1.0);
+
+    for(var i: u32 = 0; i <= max_bounce_count; i++){
+        var hit_info: HitInfo = calculate_ray_collision(ray);
+        if(hit_info.did_hit) {
+            ray.origin = hit_info.position;
+            ray.dir = random_hemisphere_direction(hit_info.normal, seed + i * 12345);
+
+            var emitted_light: vec3<f32> = hit_info.emission_color * hit_info.emission_strength;
+            incoming_light += emitted_light * ray_color;
+            ray_color *= hit_info.color;
+        } else {
+            break;
+        }
+    }
+
+    return incoming_light;
+}
+
+fn calculate_ray_collision(ray: Ray) -> HitInfo {
     var closest_hit: HitInfo;
     closest_hit.did_hit = false;
     closest_hit.distance = 1000000.0;
 
     // Loop through each sphere in the storage buffer
-    for (var i = 0u; i < 6u; i = i + 1u) {
+    for (var i = 0u; i < sphere_count; i = i + 1u) {
         var sphere_center: vec3<f32> = vec3<f32>(sphere_data[i][0], sphere_data[i][1], sphere_data[i][2]);
         var sphere_radius: f32 = sphere_data[i][3];
 
-        var hit_info: HitInfo = ray_sphere(ray_origin, ray_direction, sphere_data[i]);
+        var hit_info: HitInfo = ray_sphere(ray.origin, ray.dir, sphere_data[i]);
 
         if hit_info.did_hit && hit_info.distance < closest_hit.distance {
             closest_hit = hit_info;
@@ -94,7 +132,7 @@ fn calculate_ray_collision(ray_origin: vec3<f32>, ray_direction: vec3<f32>) -> H
     return closest_hit;
 }
 
-fn ray_sphere(ray_origin: vec3<f32>, ray_direction: vec3<f32>, sphere: array<f32, 7>) -> HitInfo {
+fn ray_sphere(ray_origin: vec3<f32>, ray_direction: vec3<f32>, sphere: array<f32, nums_per_sphere>) -> HitInfo {
     var sphere_center: vec3<f32> = vec3<f32>(sphere[0], sphere[1], sphere[2]);
     var sphere_radius: f32 = sphere[3];
     var sphere_color: vec3<f32> = vec3<f32>(sphere[4], sphere[5], sphere[6]);
@@ -120,6 +158,8 @@ fn ray_sphere(ray_origin: vec3<f32>, ray_direction: vec3<f32>, sphere: array<f32
             hit_info.position = ray_origin + ray_direction * distance;
             hit_info.normal = normalize(hit_info.position - sphere_center);
             hit_info.color = sphere_color;
+            hit_info.emission_color = vec3<f32>(sphere[7], sphere[8], sphere[9]);
+            hit_info.emission_strength = sphere[10];
         }
     }
 
@@ -150,11 +190,35 @@ fn rotate_vector(ray: vec3<f32>, angles: vec3<f32>) -> vec3<f32> {
 }
 
 // Function to generate a random number between 0 and 1
-fn random(seed: u32) -> f32 
+fn random_value(seed: u32) -> f32 
 {
   var state = seed;
   state = state ^ (state << 13);
   state = state ^ (state >> 17);
   state = state ^ (state << 5);
   return f32(state) / 4294967296.0;  // Normalize to [0, 1)
+}
+
+// Random value in normal distribution (mean = 0, std_dev = 1)
+fn random_normal(seed: u32) -> f32
+{
+  var u1 = random_value(seed);
+  var u2 = random_value(seed + 1);
+  return sqrt(-2.0 * log(u1)) * cos(2.0 * 3.14159 * u2);
+}
+
+// Random direction vector
+fn random_direction(seed: u32) -> vec3<f32>
+{
+  var x = random_normal(seed);
+  var y = random_normal(seed + 1);
+  var z = random_normal(seed + 2);
+  return normalize(vec3<f32>(x, y, z));
+}
+
+// Random direction in the hemisphere oriented around the given normal vector
+fn random_hemisphere_direction(normal: vec3<f32>, seed: u32) -> vec3<f32>
+{
+  var dir = random_direction(seed);
+  return dir * sign(dot(normal, dir));
 }
