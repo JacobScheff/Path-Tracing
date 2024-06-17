@@ -1,6 +1,9 @@
 use renderer_backend::pipeline_builder::PipelineBuilder;
 mod renderer_backend;
-use wgpu::{util::{BufferInitDescriptor, DeviceExt}, BufferUsages};
+use wgpu::{
+    util::{BufferInitDescriptor, DeviceExt},
+    BufferUsages,
+};
 use winit::{
     dpi::PhysicalSize,
     event::*,
@@ -25,6 +28,8 @@ struct State<'a> {
     previous_frame_view: wgpu::TextureView,
     previous_frame_bind_group: wgpu::BindGroup,
     previous_frame_bind_group_layout: wgpu::BindGroupLayout,
+    intermediate_texture: wgpu::Texture,
+    intermediate_texture_view: wgpu::TextureView,
 }
 
 impl<'a> State<'a> {
@@ -117,31 +122,33 @@ impl<'a> State<'a> {
         });
 
         // Create a view for the previous frame texture
-        let previous_frame_view = previous_frame_texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let previous_frame_view =
+            previous_frame_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
         // Create a bind group layout for the previous frame texture
-        let previous_frame_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 1, // Choose a different binding index than your sphere data
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        multisampled: false,
+        let previous_frame_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1, // Choose a different binding index than your sphere data
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-                // Add a sampler binding if needed
-                wgpu::BindGroupLayoutEntry {
-                    binding: 2,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                    count: None,
-                },
-            ],
-            label: Some("Previous Frame Bind Group Layout"),
-        });
+                    // Add a sampler binding if needed
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
+                    },
+                ],
+                label: Some("Previous Frame Bind Group Layout"),
+            });
 
         // Create the bind group for the previous frame texture
         let previous_frame_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -149,12 +156,14 @@ impl<'a> State<'a> {
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 1,
-                    resource: wgpu::BindingResource::TextureView(&previous_frame_view), 
+                    resource: wgpu::BindingResource::TextureView(&previous_frame_view),
                 },
                 // Add a sampler if needed
                 wgpu::BindGroupEntry {
                     binding: 2,
-                    resource: wgpu::BindingResource::Sampler(&device.create_sampler(&wgpu::SamplerDescriptor::default())),
+                    resource: wgpu::BindingResource::Sampler(
+                        &device.create_sampler(&wgpu::SamplerDescriptor::default()),
+                    ),
                 },
             ],
             label: Some("Previous Frame Bind Group"),
@@ -165,7 +174,28 @@ impl<'a> State<'a> {
         pipeline_builder.set_shader_module("shaders/shader.wgsl", "vs_main", "fs_main");
         pipeline_builder.set_pixel_format(config.format);
         pipeline_builder.set_bind_group_layout(bind_group_layout);
-        let render_pipeline = pipeline_builder.build_pipeline(&device, &previous_frame_bind_group_layout);        
+        let render_pipeline =
+            pipeline_builder.build_pipeline(&device, &previous_frame_bind_group_layout);
+
+        // Create intermediate texture with COPY_SRC usage
+        let intermediate_texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("Intermediate Texture"),
+            size: wgpu::Extent3d {
+                width: config.width,
+                height: config.height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: config.format,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+            view_formats: &[],
+        });
+
+        // Create a view for the intermediate texture
+        let intermediate_texture_view =
+            intermediate_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
         Self {
             window,
@@ -180,6 +210,8 @@ impl<'a> State<'a> {
             previous_frame_view,
             previous_frame_bind_group,
             previous_frame_bind_group_layout,
+            intermediate_texture,
+            intermediate_texture_view,
         }
     }
 
@@ -204,8 +236,8 @@ impl<'a> State<'a> {
             .device
             .create_command_encoder(&command_encoder_descriptor);
         let color_attachment = wgpu::RenderPassColorAttachment {
-            view: &image_view,
-            resolve_target: Some(&self.previous_frame_view), // Update previous frame
+            view: &self.intermediate_texture_view,
+            resolve_target: None,
             ops: wgpu::Operations {
                 load: wgpu::LoadOp::Clear(wgpu::Color {
                     r: 0.75,
@@ -233,6 +265,48 @@ impl<'a> State<'a> {
             render_pass.draw(0..3, 0..1); // Draw the first triangle
             render_pass.draw(3..6, 0..1); // Draw the second triangle
         }
+
+        // Copy to previous frame texture
+        command_encoder.copy_texture_to_texture(
+            wgpu::ImageCopyTexture {
+                texture: &self.intermediate_texture, // Source texture
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            wgpu::ImageCopyTexture {
+                texture: &self.previous_frame_texture, // Destination texture
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            wgpu::Extent3d {
+                width: self.config.width,
+                height: self.config.height,
+                depth_or_array_layers: 1,
+            },
+        );
+
+        // Copy to the surface texture
+        command_encoder.copy_texture_to_texture(
+            wgpu::ImageCopyTexture {
+                texture: &self.intermediate_texture, // Source texture
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            wgpu::ImageCopyTexture {
+                texture: &drawable.texture,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            wgpu::Extent3d {
+                width: self.config.width,
+                height: self.config.height,
+                depth_or_array_layers: 1,
+            },
+        );
 
         self.queue.submit(std::iter::once(command_encoder.finish()));
 
@@ -268,31 +342,42 @@ async fn run() {
 
     // Create sphere data - Format: [x, y, z, radius, r, g, b, er, eg, eb, emission_strength]
     let mut sphere_data: Vec<Vec<f32>> = Vec::new();
-    sphere_data.push(vec![40.0, 0.0, 0.0, 10.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
-    sphere_data.push(vec![-40.0, 0.0, 0.0, 10.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
-    sphere_data.push(vec![0.0, 40.0, 0.0, 10.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0]);
-    sphere_data.push(vec![0.0, -40.0, 0.0, 10.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
-    sphere_data.push(vec![0.0, 0.0, 40.0, 10.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0]);
-    sphere_data.push(vec![0.0, 0.0, -40.0, 10.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0]);
+    sphere_data.push(vec![
+        40.0, 0.0, 0.0, 10.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    ]);
+    sphere_data.push(vec![
+        -40.0, 0.0, 0.0, 10.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    ]);
+    sphere_data.push(vec![
+        0.0, 40.0, 0.0, 10.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+    ]);
+    sphere_data.push(vec![
+        0.0, -40.0, 0.0, 10.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    ]);
+    sphere_data.push(vec![
+        0.0, 0.0, 40.0, 10.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+    ]);
+    sphere_data.push(vec![
+        0.0, 0.0, -40.0, 10.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+    ]);
     sphere_data.push(vec![0.0, 0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8.0]); // Light source
 
-    let sphere_data_u8: Vec<u8> = sphere_data.iter().flat_map(|s| s.iter().map(|f| f.to_ne_bytes().to_vec()).flatten()).collect();
+    let sphere_data_u8: Vec<u8> = sphere_data
+        .iter()
+        .flat_map(|s| s.iter().map(|f| f.to_ne_bytes().to_vec()).flatten())
+        .collect();
 
     // Create storage buffer for sphere data
-    let sphere_buffer = state.device.create_buffer_init(
-        &BufferInitDescriptor {
-            label: Some("Sphere Buffer Data"),
-            contents: bytemuck::cast_slice(&sphere_data_u8),
-            usage: BufferUsages::STORAGE | BufferUsages::COPY_DST, 
-        }
-    );
+    let sphere_buffer = state.device.create_buffer_init(&BufferInitDescriptor {
+        label: Some("Sphere Buffer Data"),
+        contents: bytemuck::cast_slice(&sphere_data_u8),
+        usage: BufferUsages::STORAGE | BufferUsages::COPY_DST,
+    });
 
     // Write sphere data to buffer
-    state.queue.write_buffer(
-        &sphere_buffer,
-        0,
-        bytemuck::cast_slice(&sphere_data_u8),
-    );
+    state
+        .queue
+        .write_buffer(&sphere_buffer, 0, bytemuck::cast_slice(&sphere_data_u8));
 
     // Create bind group layout and bind group for sphere data
     let bind_group_layout =
@@ -325,7 +410,8 @@ async fn run() {
     pipeline_builder.set_shader_module("shaders/shader.wgsl", "vs_main", "fs_main");
     pipeline_builder.set_pixel_format(state.config.format);
     pipeline_builder.set_bind_group_layout(bind_group_layout);
-    state.render_pipeline = pipeline_builder.build_pipeline(&state.device, &state.previous_frame_bind_group_layout);
+    state.render_pipeline =
+        pipeline_builder.build_pipeline(&state.device, &state.previous_frame_bind_group_layout);
 
     event_loop
         .run(move |event, elwt| match event {
