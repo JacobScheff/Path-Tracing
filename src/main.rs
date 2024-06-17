@@ -201,9 +201,10 @@ async fn run() {
     sphere_data.push(vec![40.0, 0.0, 0.0, 10.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
     sphere_data.push(vec![-40.0, 0.0, 0.0, 10.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
     sphere_data.push(vec![0.0, 40.0, 0.0, 10.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0]);
-    sphere_data.push(vec![0.0, -40.0, 0.0, 10.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 2.0]);
+    sphere_data.push(vec![0.0, -40.0, 0.0, 10.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
     sphere_data.push(vec![0.0, 0.0, 40.0, 10.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0]);
     sphere_data.push(vec![0.0, 0.0, -40.0, 10.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0]);
+    sphere_data.push(vec![0.0, 0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2.0]); // Light source
 
     let sphere_data_u8: Vec<u8> = sphere_data.iter().flat_map(|s| s.iter().map(|f| f.to_ne_bytes().to_vec()).flatten()).collect();
 

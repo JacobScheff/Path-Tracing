@@ -22,7 +22,7 @@ struct Ray {
     dir: vec3<f32>,
 };
 
-const sphere_count: u32 = 6; // Number of spheres in the scene
+const sphere_count: u32 = 7; // Number of spheres in the scene
 const nums_per_sphere: u32 = 11; // Number of values per sphere in the storage buffer
 const max_bounce_count: u32 = 8; // Max bounces per ray
 
@@ -30,7 +30,7 @@ const max_bounce_count: u32 = 8; // Max bounces per ray
 
 @vertex
 fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
-    var positions = array<vec2<f32>, sphere_count>(
+    var positions = array<vec2<f32>, 6>(
         vec2<f32>(-1.0, -1.0), // Bottom Left
         vec2<f32>(1.0, -1.0),  // Bottom Right
         vec2<f32>(-1.0, 1.0),   // Top Left
