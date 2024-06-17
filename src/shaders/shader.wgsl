@@ -211,8 +211,8 @@ fn random_normal(seed: u32) -> f32
 fn random_direction(seed: u32) -> vec3<f32>
 {
   var x = random_normal(seed);
-  var y = random_normal(seed + 1);
-  var z = random_normal(seed + 2);
+  var y = random_normal(seed * 379);
+  var z = random_normal(seed * 123);
   return normalize(vec3<f32>(x, y, z));
 }
 
