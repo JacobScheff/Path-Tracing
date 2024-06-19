@@ -25,9 +25,10 @@ struct Ray {
 const sphere_count: u32 = 8; // Number of spheres in the scene
 const nums_per_sphere: u32 = 11; // Number of values per sphere in the storage buffer
 const max_bounce_count: u32 = 30; // Max bounces per ray
-const rays_per_pixel: u32 = 1000; // Number of rays per pixel
+const rays_per_pixel: u32 = 50; // Number of rays per pixel
 
 @group(0) @binding(0) var<storage, read> sphere_data : array<array<f32, nums_per_sphere>, sphere_count>;
+@group(0) @binding(1) var<storage, read> frame_count: u32;
 
 @vertex
 fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {

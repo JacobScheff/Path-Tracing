@@ -1,6 +1,9 @@
 use renderer_backend::pipeline_builder::PipelineBuilder;
 mod renderer_backend;
-use wgpu::{util::{BufferInitDescriptor, DeviceExt}, BufferUsages};
+use wgpu::{
+    util::{BufferInitDescriptor, DeviceExt},
+    BufferUsages,
+};
 use winit::{
     dpi::PhysicalSize,
     event::*,
@@ -21,6 +24,7 @@ struct State<'a> {
     window: &'a Window,
     render_pipeline: wgpu::RenderPipeline,
     bind_group: wgpu::BindGroup,
+    frame_count: u32,
 }
 
 impl<'a> State<'a> {
@@ -112,6 +116,7 @@ impl<'a> State<'a> {
             size,
             render_pipeline,
             bind_group: temp_bind_group,
+            frame_count: 0,
         }
     }
 
@@ -169,6 +174,8 @@ impl<'a> State<'a> {
 
         drawable.present();
 
+        self.frame_count += 1;
+
         Ok(())
     }
 }
@@ -199,32 +206,56 @@ async fn run() {
 
     // Create sphere data - Format: [x, y, z, radius, r, g, b, er, eg, eb, emission_strength]
     let mut sphere_data: Vec<Vec<f32>> = Vec::new();
-    sphere_data.push(vec![40.0, 0.0, 0.0, 10.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
-    sphere_data.push(vec![-40.0, 0.0, 0.0, 10.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
-    sphere_data.push(vec![0.0, 40.0, 0.0, 10.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0]);
-    sphere_data.push(vec![0.0, -40.0, 0.0, 10.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
-    sphere_data.push(vec![0.0, 0.0, 40.0, 10.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0]);
-    sphere_data.push(vec![0.0, 0.0, -40.0, 10.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0]);
+    sphere_data.push(vec![
+        40.0, 0.0, 0.0, 10.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    ]);
+    sphere_data.push(vec![
+        -40.0, 0.0, 0.0, 10.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    ]);
+    sphere_data.push(vec![
+        0.0, 40.0, 0.0, 10.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+    ]);
+    sphere_data.push(vec![
+        0.0, -40.0, 0.0, 10.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    ]);
+    sphere_data.push(vec![
+        0.0, 0.0, 40.0, 10.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+    ]);
+    sphere_data.push(vec![
+        0.0, 0.0, -40.0, 10.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+    ]);
     sphere_data.push(vec![0.0, 0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 12.0]); // Light source
-    sphere_data.push(vec![150.0, -100.0, 0.0, 130.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0]); // Wall
+    sphere_data.push(vec![
+        150.0, -100.0, 0.0, 130.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+    ]); // Wall
 
+    let sphere_data_u8: Vec<u8> = sphere_data
+        .iter()
+        .flat_map(|s| s.iter().map(|f| f.to_ne_bytes().to_vec()).flatten())
+        .collect();
 
-    let sphere_data_u8: Vec<u8> = sphere_data.iter().flat_map(|s| s.iter().map(|f| f.to_ne_bytes().to_vec()).flatten()).collect();
+    // Buffer for sphere data
+    let sphere_buffer = state.device.create_buffer_init(&BufferInitDescriptor {
+        label: Some("Sphere Buffer Data"),
+        contents: bytemuck::cast_slice(&sphere_data_u8),
+        usage: BufferUsages::STORAGE | BufferUsages::COPY_DST,
+    });
 
-    // Create storage buffer for sphere data
-    let sphere_buffer = state.device.create_buffer_init(
-        &BufferInitDescriptor {
-            label: Some("Sphere Buffer Data"),
-            contents: bytemuck::cast_slice(&sphere_data_u8),
-            usage: BufferUsages::STORAGE | BufferUsages::COPY_DST, 
-        }
-    );
+    // Buffer for frame count
+    let frame_count_buffer = state.device.create_buffer_init(&BufferInitDescriptor {
+        label: Some("Frame Count Buffer"),
+        contents: bytemuck::cast_slice(&[state.frame_count]),
+        usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
+    });
 
-    // Write sphere data to buffer
+    // Write data to buffer
+    state
+        .queue
+        .write_buffer(&sphere_buffer, 0, bytemuck::cast_slice(&sphere_data_u8));
     state.queue.write_buffer(
-        &sphere_buffer,
+        &frame_count_buffer,
         0,
-        bytemuck::cast_slice(&sphere_data_u8),
+        bytemuck::cast_slice(&[state.frame_count]),
     );
 
     // Create bind group layout and bind group for sphere data
@@ -232,16 +263,28 @@ async fn run() {
         state
             .device
             .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                entries: &[wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Storage { read_only: true },
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Storage { read_only: true },
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
                     },
-                    count: None,
-                }],
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                ],
                 label: Some("Sphere Bind Group Layout"),
             });
     state.bind_group = state.device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -250,6 +293,10 @@ async fn run() {
         entries: &[wgpu::BindGroupEntry {
             binding: 0,
             resource: sphere_buffer.as_entire_binding(),
+        },
+        wgpu::BindGroupEntry {
+            binding: 1,
+            resource: frame_count_buffer.as_entire_binding(),
         }],
     });
 
