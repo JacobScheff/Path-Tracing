@@ -13,7 +13,7 @@ use winit::{
 };
 
 const SCREEN_SIZE: (u32, u32) = (1200, 600);
-const TIME_BETWEEN_FRAMES: u64 = 1000; // 17
+const TIME_BETWEEN_FRAMES: u64 = 17;
 
 struct State<'a> {
     surface: wgpu::Surface<'a>,
