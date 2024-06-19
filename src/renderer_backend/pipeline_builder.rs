@@ -22,7 +22,7 @@ impl PipelineBuilder {
     }
 
     pub fn set_bind_group_layout(&mut self, bind_group_layout: wgpu::BindGroupLayout) {
-        self.bind_group_layout = Some(bind_group_layout); // Move ownership 
+        self.bind_group_layout = Some(bind_group_layout);
     }
 
     pub fn set_shader_module(&mut self, 
@@ -51,9 +51,37 @@ impl PipelineBuilder {
         };
         let shader_module = device.create_shader_module(shader_module_descriptor);
 
+        // Create the bind group layout *before* building the pipeline
+        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
+            ],
+            label: Some("Sphere Bind Group Layout"),
+        });
+        
+        // Create the pipeline using the new bind group layout
         let pipeline_layout_descriptor = wgpu::PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
-            bind_group_layouts: &[self.bind_group_layout.as_ref().unwrap()],
+            bind_group_layouts: &[&bind_group_layout],
             push_constant_ranges: &[],
         };
         
@@ -98,12 +126,6 @@ impl PipelineBuilder {
                 alpha_to_coverage_enabled: false,
             },
             multiview: None,
-        };
-
-        let pipeline_layout_descriptor = wgpu::PipelineLayoutDescriptor {
-            label: Some("Render Pipeline Layout"),
-            bind_group_layouts: &[self.bind_group_layout.as_ref().unwrap()], // Use the layout here
-            push_constant_ranges: &[],
         };
 
         device.create_render_pipeline(&render_pipeline_descriptor)
