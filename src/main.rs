@@ -25,6 +25,7 @@ struct State<'a> {
     render_pipeline: wgpu::RenderPipeline,
     bind_group: wgpu::BindGroup,
     frame_count: u32,
+    frame_count_buffer: wgpu::Buffer,
 }
 
 impl<'a> State<'a> {
@@ -119,6 +120,13 @@ impl<'a> State<'a> {
             entries: &[],
         });
 
+        // Buffer for frame count
+        let frame_count_buffer = device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Frame Count Buffer"),
+            contents: bytemuck::cast_slice(&[0]),
+            usage: BufferUsages::STORAGE | BufferUsages::COPY_DST,
+        });
+
         Self {
             window,
             surface,
@@ -129,6 +137,7 @@ impl<'a> State<'a> {
             render_pipeline,
             bind_group: temp_bind_group,
             frame_count: 0,
+            frame_count_buffer,
         }
     }
 
@@ -142,6 +151,13 @@ impl<'a> State<'a> {
     }
 
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
+        // Update the frame count buffer before rendering
+        self.queue.write_buffer(
+            &self.frame_count_buffer,
+            0,
+            bytemuck::cast_slice(&[self.frame_count]),
+        );
+
         let drawable = self.surface.get_current_texture()?;
         let image_view_descriptor = wgpu::TextureViewDescriptor::default();
         let image_view = drawable.texture.create_view(&image_view_descriptor);
@@ -253,19 +269,12 @@ async fn run() {
         usage: BufferUsages::STORAGE | BufferUsages::COPY_DST,
     });
 
-    // Buffer for frame count
-    let frame_count_buffer = state.device.create_buffer_init(&BufferInitDescriptor {
-        label: Some("Frame Count Buffer"),
-        contents: bytemuck::cast_slice(&[state.frame_count]),
-        usage: BufferUsages::STORAGE | BufferUsages::COPY_DST,
-    });
-
     // Write data to buffer
     state
         .queue
         .write_buffer(&sphere_buffer, 0, bytemuck::cast_slice(&sphere_data_u8));
     state.queue.write_buffer(
-        &frame_count_buffer,
+        &state.frame_count_buffer,
         0,
         bytemuck::cast_slice(&[state.frame_count]),
     );
@@ -309,7 +318,7 @@ async fn run() {
             },
             wgpu::BindGroupEntry {
                 binding: 1,
-                resource: frame_count_buffer.as_entire_binding(),
+                resource: state.frame_count_buffer.as_entire_binding(),
             },
         ],
     });

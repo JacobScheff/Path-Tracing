@@ -62,32 +62,31 @@ fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    return vec4<f32>(0.0, 0.0, f32(frame_count) / 1000.0, 1.0);
-    // // Map pixel coordinates to screen plane coordinates
-    // let u: f32 = (2.0 * in.pos.x / in.screen_size.x - 1.0) * in.screen_width / 2.0;
-    // let v: f32 = (1.0 - 2.0 * in.pos.y / in.screen_size.y) * in.screen_height / 2.0;
-    // let pixel_index: u32 = u32(in.pos.x + in.pos.y * in.screen_size.x);
+    // Map pixel coordinates to screen plane coordinates
+    let u: f32 = (2.0 * in.pos.x / in.screen_size.x - 1.0) * in.screen_width / 2.0;
+    let v: f32 = (1.0 - 2.0 * in.pos.y / in.screen_size.y) * in.screen_height / 2.0;
+    let pixel_index: u32 = u32(in.pos.x + in.pos.y * in.screen_size.x);
 
-    // // Create ray and ray direction vector
-    // var ray_direction: vec3<f32> = vec3<f32>(u, v, -1.0);
-    // ray_direction = normalize(ray_direction);
+    // Create ray and ray direction vector
+    var ray_direction: vec3<f32> = vec3<f32>(u, v, -1.0);
+    ray_direction = normalize(ray_direction);
 
-    // // Rotate ray direction vector
-    // ray_direction = rotate_vector(ray_direction, in.camera_rotation);
+    // Rotate ray direction vector
+    ray_direction = rotate_vector(ray_direction, in.camera_rotation);
 
-    // // Create ray
-    // var ray: Ray;
-    // ray.origin = in.camera_position;
-    // ray.dir = ray_direction;
+    // Create ray
+    var ray: Ray;
+    ray.origin = in.camera_position;
+    ray.dir = ray_direction;
 
-    // // Calculate pixel color
-    // var pixel_color: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
-    // for (var i: u32 = 0u; i < rays_per_pixel; i = i + 1u) {
-    //     pixel_color += trace(ray, pixel_index + i * 248135);
-    // }
-    // pixel_color /= f32(rays_per_pixel);
+    // Calculate pixel color
+    var pixel_color: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
+    for (var i: u32 = 0u; i < rays_per_pixel; i = i + 1u) {
+        pixel_color += trace(ray, pixel_index + i * 248135);
+    }
+    pixel_color /= f32(rays_per_pixel);
     
-    // return vec4<f32>(pixel_color, 1.0);
+    return vec4<f32>(pixel_color, 1.0);
 }
 
 fn trace(ray_in: Ray, seed: u32) -> vec3<f32> {
