@@ -26,6 +26,8 @@ struct State<'a> {
     bind_group: wgpu::BindGroup,
     frame_count: u32,
     frame_count_buffer: wgpu::Buffer,
+    frame_data: Vec<Vec<Vec<f32>>>,
+    frame_data_buffer: wgpu::Buffer,
 }
 
 impl<'a> State<'a> {
@@ -76,7 +78,7 @@ impl<'a> State<'a> {
         };
         surface.configure(&device, &config);
 
-        // Create bind group layout and bind group for sphere data
+        // Create bind group layout
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             entries: &[
                 wgpu::BindGroupLayoutEntry {
@@ -120,10 +122,26 @@ impl<'a> State<'a> {
             entries: &[],
         });
 
-        // Buffer for frame count
+        // Buffer for the frame count
         let frame_count_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("Frame Count Buffer"),
             contents: bytemuck::cast_slice(&[0]),
+            usage: BufferUsages::STORAGE | BufferUsages::COPY_DST,
+        });
+
+        // Frame data that starts off completely black
+        let frame_data = vec![vec![vec![0.0; 3]; size.width as usize]; size.height as usize];
+        let frame_data_flat: Vec<f32> = frame_data.iter().flatten().flatten().copied().collect();
+        let frame_data_u8: Vec<u8> = frame_data_flat
+            .iter()
+            .map(|f| f.to_ne_bytes().to_vec())
+            .flatten()
+            .collect();
+
+        // Buffer for the frame data
+        let frame_data_buffer = device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Frame Data Buffer"),
+            contents: bytemuck::cast_slice(&frame_data_u8),
             usage: BufferUsages::STORAGE | BufferUsages::COPY_DST,
         });
 
@@ -138,6 +156,8 @@ impl<'a> State<'a> {
             bind_group: temp_bind_group,
             frame_count: 0,
             frame_count_buffer,
+            frame_data,
+            frame_data_buffer,
         }
     }
 
@@ -279,7 +299,7 @@ async fn run() {
         bytemuck::cast_slice(&[state.frame_count]),
     );
 
-    // Create bind group layout and bind group for sphere data
+    // Create bind group layout
     let bind_group_layout =
         state
             .device
@@ -305,6 +325,16 @@ async fn run() {
                         },
                         count: None,
                     },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Storage { read_only: false },
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
                 ],
                 label: Some("Sphere Bind Group Layout"),
             });
@@ -319,6 +349,10 @@ async fn run() {
             wgpu::BindGroupEntry {
                 binding: 1,
                 resource: state.frame_count_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 2,
+                resource: state.frame_data_buffer.as_entire_binding(),
             },
         ],
     });

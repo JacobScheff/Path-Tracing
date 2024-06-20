@@ -22,13 +22,14 @@ struct Ray {
     dir: vec3<f32>,
 };
 
+@group(0) @binding(0) var<storage, read> sphere_data : array<array<f32, nums_per_sphere>, sphere_count>;
+@group(0) @binding(1) var<storage, read> frame_count: u32;
+@group(0) @binding(2) var<storage, read_write> frame_data: array<array<vec3<f32>, 1200>, 600>;
+
 const sphere_count: u32 = 8; // Number of spheres in the scene
 const nums_per_sphere: u32 = 11; // Number of values per sphere in the storage buffer
 const max_bounce_count: u32 = 20; // Max bounces per ray
 const rays_per_pixel: u32 = 50; // Number of rays per pixel
-
-@group(0) @binding(0) var<storage, read> sphere_data : array<array<f32, nums_per_sphere>, sphere_count>;
-@group(0) @binding(1) var<storage, read> frame_count: u32;
 
 @vertex
 fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
@@ -85,8 +86,11 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
         pixel_color += trace(ray, pixel_index + i * 248135);
     }
     pixel_color /= f32(rays_per_pixel);
+
+    let weight: f32 = 1.0 / f32(frame_count + 1); // Might need to be + 2 since frame_count starts at 0
+    let weighted_average: vec3<f32> = frame_data[i32(in.pos.y)][i32(in.pos.x)] * (1.0 - weight) + pixel_color * weight;
     
-    return vec4<f32>(pixel_color, 1.0);
+    return vec4<f32>(weighted_average, 1.0);
 }
 
 fn trace(ray_in: Ray, seed: u32) -> vec3<f32> {
