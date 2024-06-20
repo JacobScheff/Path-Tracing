@@ -28,6 +28,7 @@ struct State<'a> {
     frame_count_buffer: wgpu::Buffer,
     frame_data: Vec<Vec<Vec<f32>>>,
     frame_data_buffer: wgpu::Buffer,
+    sphere_buffer: wgpu::Buffer,
 }
 
 impl<'a> State<'a> {
@@ -101,6 +102,16 @@ impl<'a> State<'a> {
                     },
                     count: None,
                 },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 2,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: false },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
             ],
             label: Some("Sphere Bind Group Layout"),
         });
@@ -121,6 +132,46 @@ impl<'a> State<'a> {
             }),
             entries: &[],
         });
+
+        // Create sphere data - Format: [x, y, z, radius, r, g, b, er, eg, eb, emission_strength]
+        let mut sphere_data: Vec<Vec<f32>> = Vec::new();
+        sphere_data.push(vec![
+            40.0, 0.0, 0.0, 10.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        ]);
+        sphere_data.push(vec![
+            -40.0, 0.0, 0.0, 10.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        ]);
+        sphere_data.push(vec![
+            0.0, 40.0, 0.0, 10.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+        ]);
+        sphere_data.push(vec![
+            0.0, -40.0, 0.0, 10.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        ]);
+        sphere_data.push(vec![
+            0.0, 0.0, 40.0, 10.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+        ]);
+        sphere_data.push(vec![
+            0.0, 0.0, -40.0, 10.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+        ]);
+        sphere_data.push(vec![0.0, 0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10.0]); // Light source
+        sphere_data.push(vec![
+            150.0, -100.0, 0.0, 130.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+        ]); // Large Sphere
+
+        let sphere_data_u8: Vec<u8> = sphere_data
+            .iter()
+            .flat_map(|s| s.iter().map(|f| f.to_ne_bytes().to_vec()).flatten())
+            .collect();
+
+        // Buffer for sphere data
+        let sphere_buffer = device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Sphere Buffer Data"),
+            contents: bytemuck::cast_slice(&sphere_data_u8),
+            usage: BufferUsages::STORAGE | BufferUsages::COPY_DST,
+        });
+
+        // Write data to buffer
+        queue.write_buffer(&sphere_buffer, 0, bytemuck::cast_slice(&sphere_data_u8));
 
         // Buffer for the frame count
         let frame_count_buffer = device.create_buffer_init(&BufferInitDescriptor {
@@ -158,6 +209,7 @@ impl<'a> State<'a> {
             frame_count_buffer,
             frame_data,
             frame_data_buffer,
+            sphere_buffer,
         }
     }
 
@@ -252,53 +304,6 @@ async fn run() {
 
     let mut state = State::new(&window).await;
 
-    // Create sphere data - Format: [x, y, z, radius, r, g, b, er, eg, eb, emission_strength]
-    let mut sphere_data: Vec<Vec<f32>> = Vec::new();
-    sphere_data.push(vec![
-        40.0, 0.0, 0.0, 10.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-    ]);
-    sphere_data.push(vec![
-        -40.0, 0.0, 0.0, 10.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-    ]);
-    sphere_data.push(vec![
-        0.0, 40.0, 0.0, 10.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
-    ]);
-    sphere_data.push(vec![
-        0.0, -40.0, 0.0, 10.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-    ]);
-    sphere_data.push(vec![
-        0.0, 0.0, 40.0, 10.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0,
-    ]);
-    sphere_data.push(vec![
-        0.0, 0.0, -40.0, 10.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
-    ]);
-    sphere_data.push(vec![0.0, 0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10.0]); // Light source
-    sphere_data.push(vec![
-        150.0, -100.0, 0.0, 130.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0,
-    ]); // Large Sphere
-
-    let sphere_data_u8: Vec<u8> = sphere_data
-        .iter()
-        .flat_map(|s| s.iter().map(|f| f.to_ne_bytes().to_vec()).flatten())
-        .collect();
-
-    // Buffer for sphere data
-    let sphere_buffer = state.device.create_buffer_init(&BufferInitDescriptor {
-        label: Some("Sphere Buffer Data"),
-        contents: bytemuck::cast_slice(&sphere_data_u8),
-        usage: BufferUsages::STORAGE | BufferUsages::COPY_DST,
-    });
-
-    // Write data to buffer
-    state
-        .queue
-        .write_buffer(&sphere_buffer, 0, bytemuck::cast_slice(&sphere_data_u8));
-    state.queue.write_buffer(
-        &state.frame_count_buffer,
-        0,
-        bytemuck::cast_slice(&[state.frame_count]),
-    );
-
     // Create bind group layout
     let bind_group_layout =
         state
@@ -344,7 +349,7 @@ async fn run() {
         entries: &[
             wgpu::BindGroupEntry {
                 binding: 0,
-                resource: sphere_buffer.as_entire_binding(),
+                resource: state.sphere_buffer.as_entire_binding(),
             },
             wgpu::BindGroupEntry {
                 binding: 1,
