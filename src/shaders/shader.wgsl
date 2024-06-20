@@ -21,10 +21,6 @@ struct Ray {
     dir: vec3<f32>,
 };
 
-@group(0) @binding(0) var<storage, read> sphere_data : array<array<f32, nums_per_sphere>, sphere_count>;
-@group(0) @binding(1) var<storage, read> frame_count: u32;
-@group(0) @binding(2) var<storage, read_write> frame_data: array<array<vec3<f32>, 1200>, 600>;
-
 const sphere_count: u32 = 8; // Number of spheres in the scene
 const nums_per_sphere: u32 = 11; // Number of values per sphere in the storage buffer
 const max_bounce_count: u32 = 20; // Max bounces per ray
@@ -32,6 +28,10 @@ const rays_per_pixel: u32 = 50; // Number of rays per pixel
 const screen_size: vec2<f32> = vec2<f32>(1200.0, 600.0); // Size of the screen
 const fov: f32 = 60.0 * 3.14159 / 180.0; // Field of view in radians
 const aspect_ratio: f32 = screen_size.x / screen_size.y; // Aspect ratio of the screen
+
+@group(0) @binding(0) var<storage, read> sphere_data : array<array<f32, nums_per_sphere>, sphere_count>;
+@group(0) @binding(1) var<storage, read> frame_count: u32;
+@group(0) @binding(2) var<storage, read_write> frame_data: array<array<vec3<f32>, u32(screen_size.x)>, u32(screen_size.y)>;
 
 @vertex
 fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
