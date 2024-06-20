@@ -252,10 +252,10 @@ async fn run() {
     sphere_data.push(vec![
         0.0, 0.0, -40.0, 10.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
     ]);
-    sphere_data.push(vec![0.0, 0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 12.0]); // Light source
+    sphere_data.push(vec![0.0, 0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10.0]); // Light source
     sphere_data.push(vec![
         150.0, -100.0, 0.0, 130.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0,
-    ]); // Wall
+    ]); // Large Sphere
 
     let sphere_data_u8: Vec<u8> = sphere_data
         .iter()
