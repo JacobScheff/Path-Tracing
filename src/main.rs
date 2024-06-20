@@ -26,7 +26,6 @@ struct State<'a> {
     bind_group: wgpu::BindGroup,
     frame_count: u32,
     frame_count_buffer: wgpu::Buffer,
-    frame_data: Vec<Vec<Vec<f32>>>,
     frame_data_buffer: wgpu::Buffer,
     sphere_buffer: wgpu::Buffer,
 }
@@ -207,7 +206,6 @@ impl<'a> State<'a> {
             bind_group: temp_bind_group,
             frame_count: 0,
             frame_count_buffer,
-            frame_data,
             frame_data_buffer,
             sphere_buffer,
         }
