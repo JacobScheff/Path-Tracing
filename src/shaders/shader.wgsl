@@ -102,7 +102,7 @@ fn trace(ray_in: Ray, seed: u32) -> vec3<f32> {
         var hit_info: HitInfo = calculate_ray_collision(ray);
         if(hit_info.did_hit) {
             ray.origin = hit_info.position;
-            ray.dir = normalize(hit_info.normal + random_direction(seed + i * 12345 + frame_count * 1000));
+            ray.dir = normalize(hit_info.normal + random_direction(seed + i * 12345 + frame_count * 3939));
 
             var emitted_light: vec3<f32> = hit_info.emission_color * hit_info.emission_strength;
             incoming_light += emitted_light * ray_color;
