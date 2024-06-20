@@ -1,10 +1,9 @@
 struct VertexOutput {
     @builtin(position) pos: vec4<f32>,
-    @location(0) screen_size: vec2<f32>,
-    @location(1) screen_width: f32,
-    @location(2) screen_height: f32,
-    @location(3) camera_position: vec3<f32>,
-    @location(4) camera_rotation: vec3<f32>,
+    @location(0) screen_width: f32,
+    @location(1) screen_height: f32,
+    @location(2) camera_position: vec3<f32>,
+    @location(3) camera_rotation: vec3<f32>,
 };
 
 struct HitInfo {
@@ -30,6 +29,9 @@ const sphere_count: u32 = 8; // Number of spheres in the scene
 const nums_per_sphere: u32 = 11; // Number of values per sphere in the storage buffer
 const max_bounce_count: u32 = 20; // Max bounces per ray
 const rays_per_pixel: u32 = 50; // Number of rays per pixel
+const screen_size: vec2<f32> = vec2<f32>(1200.0, 600.0); // Size of the screen
+const fov: f32 = 60.0 * 3.14159 / 180.0; // Field of view in radians
+const aspect_ratio: f32 = screen_size.x / screen_size.y; // Aspect ratio of the screen
 
 @vertex
 fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
@@ -43,9 +45,6 @@ fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
         vec2<f32>(1.0, -1.0) // Bottom Right
     );
 
-    var screen_size: vec2<f32> = vec2<f32>(1200.0, 600.0);
-    var fov: f32 = 60.0 * 3.14159 / 180.0;
-    var aspect_ratio: f32 = screen_size.x / screen_size.y;
     var screen_width: f32 = tan(fov * 0.5) * 2.0;
     var screen_height: f32 = screen_width / aspect_ratio;
     var camera_position: vec3<f32> = vec3<f32>(90.0, 90.0, 130.0);
@@ -53,7 +52,6 @@ fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
 
     var out: VertexOutput;
     out.pos = vec4<f32>(positions[i], 0.0, 1.0);
-    out.screen_size = screen_size;
     out.screen_width = screen_width;
     out.screen_height = screen_height;
     out.camera_position = camera_position;
@@ -64,9 +62,9 @@ fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     // Map pixel coordinates to screen plane coordinates
-    let u: f32 = (2.0 * in.pos.x / in.screen_size.x - 1.0) * in.screen_width / 2.0;
-    let v: f32 = (1.0 - 2.0 * in.pos.y / in.screen_size.y) * in.screen_height / 2.0;
-    let pixel_index: u32 = u32(in.pos.x + in.pos.y * in.screen_size.x);
+    let u: f32 = (2.0 * in.pos.x / screen_size.x - 1.0) * in.screen_width / 2.0;
+    let v: f32 = (1.0 - 2.0 * in.pos.y / screen_size.y) * in.screen_height / 2.0;
+    let pixel_index: u32 = u32(in.pos.x + in.pos.y * screen_size.x);
 
     // Create ray and ray direction vector
     var ray_direction: vec3<f32> = vec3<f32>(u, v, -1.0);
