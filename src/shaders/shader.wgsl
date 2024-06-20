@@ -89,6 +89,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
     let weight: f32 = 1.0 / f32(frame_count + 1); // Might need to be + 2 since frame_count starts at 0
     let weighted_average: vec3<f32> = frame_data[i32(in.pos.y)][i32(in.pos.x)] * (1.0 - weight) + pixel_color * weight;
+    frame_data[i32(in.pos.y)][i32(in.pos.x)] = weighted_average;
     
     return vec4<f32>(weighted_average, 1.0);
 }
