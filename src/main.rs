@@ -14,6 +14,7 @@ use winit::{
 
 const SCREEN_SIZE: (u32, u32) = (1200, 600);
 const TIME_BETWEEN_FRAMES: u64 = 17;
+const CAMERA_SPEED: f32 = 0.5;
 
 struct State<'a> {
     surface: wgpu::Surface<'a>,
@@ -266,6 +267,18 @@ impl<'a> State<'a> {
             bytemuck::cast_slice(&[self.frame_count]),
         );
 
+        // Update camera position and rotation buffers before rendering
+        self.queue.write_buffer(
+            &self.camera_position_buffer,
+            0,
+            bytemuck::cast_slice(&self.camera_position),
+        );
+        self.queue.write_buffer(
+            &self.camera_rotation_buffer,
+            0,
+            bytemuck::cast_slice(&self.camera_rotation),
+        );
+
         let drawable = self.surface.get_current_texture()?;
         let image_view_descriptor = wgpu::TextureViewDescriptor::default();
         let image_view = drawable.texture.create_view(&image_view_descriptor);
@@ -458,6 +471,34 @@ async fn run() {
                 } => {
                     println!("Goodbye see you!");
                     elwt.exit();
+                }
+
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            physical_key: PhysicalKey::Code(KeyCode::KeyW),
+                            state: ElementState::Pressed,
+                            repeat: true,
+                            ..
+                        },
+                    ..
+                } => {
+                    state.camera_position[2] -= CAMERA_SPEED;
+                    state.frame_count = 0;
+                }
+
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            physical_key: PhysicalKey::Code(KeyCode::KeyS),
+                            state: ElementState::Pressed,
+                            repeat: true,
+                            ..
+                        },
+                    ..
+                } => {
+                    state.camera_position[2] += CAMERA_SPEED;
+                    state.frame_count = 0;
                 }
 
                 WindowEvent::RedrawRequested => match state.render() {
