@@ -20,7 +20,7 @@ struct Ray {
     dir: vec3<f32>,
 };
 
-const sphere_count: u32 = 8; // Number of spheres in the scene
+const sphere_count: u32 = 9; // Number of spheres in the scene
 const nums_per_sphere: u32 = 12; // Number of values stored for every sphere
 const max_bounce_count: u32 = 20; // Max bounces per ray
 const rays_per_pixel: u32 = 20; // Number of rays per pixel
@@ -38,9 +38,9 @@ const aspect_ratio: f32 = screen_size.x / screen_size.y; // Aspect ratio of the 
 const sky_color_horizon: vec3<f32> = vec3<f32>(0.5, 0.7, 1.0);
 const sky_color_zenith: vec3<f32> = vec3<f32>(0.1, 0.25, 1.0);
 const ground_color: vec3<f32> = vec3<f32>(0.2, 0.2, 0.2);
-const sun_light_direction: vec3<f32> = vec3<f32>(0.5, 0.5, 0.5); // Not normalized
+const sun_light_direction: vec3<f32> = vec3<f32>(0, -0.4, 0.5); // Not normalized
 const sun_intensity: f32 = 5;
-const sun_focus: f32 = 10.0;
+const sun_focus: f32 = 200;
 
 @vertex
 fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
@@ -246,7 +246,7 @@ fn get_environment_light(ray: Ray) -> vec3<f32>
 {
     let sky_gradient_t = pow(smoothstep(0.0, 0.4, ray.dir.y), 0.35);
     let sky_gradient: vec3<f32> = lerp(sky_color_horizon, sky_color_zenith, sky_gradient_t);
-    let sun: f32 = pow(max(0.0, dot(ray.dir, -sun_light_direction)), sun_focus) * sun_intensity;
+    let sun: f32 = pow(max(0.0, dot(ray.dir, -normalize(sun_light_direction))), sun_focus) * sun_intensity;
 
     // Combine ground, sky, and sun
     let ground_to_sky_t = smoothstep(-0.01, 0.0, ray.dir.y);

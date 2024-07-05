@@ -15,7 +15,7 @@ use winit::{
 const SCREEN_SIZE: (u32, u32) = (1200, 600);
 const TIME_BETWEEN_FRAMES: u64 = 17;
 const CAMERA_SPEED: f32 = 0.5;
-const CAMERA_ROT_SPEED: f32 = 2.0;
+const CAMERA_ROT_SPEED: f32 = 1.0;
 
 struct State<'a> {
     surface: wgpu::Surface<'a>,
@@ -48,44 +48,56 @@ impl<'a> State<'a> {
         let mut local_movement = [0.0, 0.0, 0.0];
         let mut local_rotation = [0.0, 0.0, 0.0];
 
-        if self.keys_pressed[0] { // W
+        if self.keys_pressed[0] {
+            // W
             local_movement[2] -= CAMERA_SPEED;
         }
-        if self.keys_pressed[1] { // S
+        if self.keys_pressed[1] {
+            // S
             local_movement[2] += CAMERA_SPEED;
         }
-        if self.keys_pressed[2] { // D
+        if self.keys_pressed[2] {
+            // D
             local_movement[0] += CAMERA_SPEED;
         }
-        if self.keys_pressed[3] { // A
+        if self.keys_pressed[3] {
+            // A
             local_movement[0] -= CAMERA_SPEED;
         }
-        if self.keys_pressed[4] { // Space
+        if self.keys_pressed[4] {
+            // Space
             local_movement[1] += CAMERA_SPEED;
         }
-        if self.keys_pressed[5] { // Shift
+        if self.keys_pressed[5] {
+            // Shift
             local_movement[1] -= CAMERA_SPEED;
         }
 
-        if self.keys_pressed[6] { // I
+        if self.keys_pressed[6] {
+            // I
             local_rotation[0] += CAMERA_ROT_SPEED;
         }
-        if self.keys_pressed[7] { // K
+        if self.keys_pressed[7] {
+            // K
             local_rotation[0] -= CAMERA_ROT_SPEED;
         }
-        if self.keys_pressed[8] { // L
+        if self.keys_pressed[8] {
+            // L
             local_rotation[1] += CAMERA_ROT_SPEED;
         }
-        if self.keys_pressed[9] { // J
+        if self.keys_pressed[9] {
+            // J
             local_rotation[1] -= CAMERA_ROT_SPEED;
         }
-        if self.keys_pressed[10] { // O
+        if self.keys_pressed[10] {
+            // O
             local_rotation[2] += CAMERA_ROT_SPEED;
         }
-        if self.keys_pressed[11] { // U
+        if self.keys_pressed[11] {
+            // U
             local_rotation[2] -= CAMERA_ROT_SPEED;
         }
-        
+
         // Convert local to global
         let global_movement = self.rotate_vector(local_movement, self.camera_rotation);
         let global_rotation = self.rotate_vector(local_rotation, self.camera_rotation);
@@ -100,34 +112,11 @@ impl<'a> State<'a> {
         self.camera_rotation[2] += global_rotation[2];
     }
 
-    // Rotate a vector by a given rotation
-    // fn rotate_vector(ray: vec3<f32>, angles: vec3<f32>) -> vec3<f32> {
-    //     let x = ray.x;
-    //     let y = ray.y;
-    //     let z = ray.z;
-    
-    //     let a = angles.x * 3.14159 / 180.0;
-    //     let b = angles.y * 3.14159 / 180.0;
-    //     let c = angles.z * 3.14159 / 180.0;
-    
-    //     let cos_a = cos(a);
-    //     let sin_a = sin(a);
-    //     let cos_b = cos(b);
-    //     let sin_b = sin(b);
-    //     let cos_c = cos(c);
-    //     let sin_c = sin(c);
-    
-    //     let x_rot = x * cos_c * cos_b + y * (cos_c * sin_b * sin_a - sin_c * cos_a) + z * (cos_c * sin_b * cos_a + sin_c * sin_a);
-    //     let y_rot = x * sin_c * cos_b + y * (sin_c * sin_b * sin_a + cos_c * cos_a) + z * (sin_c * sin_b * cos_a - cos_c * sin_a);
-    //     let z_rot = -x * sin_b + y * cos_b * sin_a + z * cos_b * cos_a;
-    
-    //     return vec3<f32>(x_rot, y_rot, z_rot);
-    // }
     fn rotate_vector(&mut self, vector: [f32; 3], rotation: [f32; 3]) -> [f32; 3] {
         let x = vector[0];
         let y = vector[1];
         let z = vector[2];
-        
+
         let a = rotation[0].to_radians();
         let b = rotation[1].to_radians();
         let c = rotation[2].to_radians();
@@ -139,8 +128,12 @@ impl<'a> State<'a> {
         let cos_c = c.cos();
         let sin_c = c.sin();
 
-        let x_rot = x * cos_c * cos_b + y * (cos_c * sin_b * sin_a - sin_c * cos_a) + z * (cos_c * sin_b * cos_a + sin_c * sin_a);
-        let y_rot = x * sin_c * cos_b + y * (sin_c * sin_b * sin_a + cos_c * cos_a) + z * (sin_c * sin_b * cos_a - cos_c * sin_a);
+        let x_rot = x * cos_c * cos_b
+            + y * (cos_c * sin_b * sin_a - sin_c * cos_a)
+            + z * (cos_c * sin_b * cos_a + sin_c * sin_a);
+        let y_rot = x * sin_c * cos_b
+            + y * (sin_c * sin_b * sin_a + cos_c * cos_a)
+            + z * (sin_c * sin_b * cos_a - cos_c * sin_a);
         let z_rot = -x * sin_b + y * cos_b * sin_a + z * cos_b * cos_a;
 
         [x_rot, y_rot, z_rot]
@@ -278,6 +271,9 @@ impl<'a> State<'a> {
         sphere_data.push(vec![
             0.0, -20.0, 0.0, 10.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
         ]);
+        sphere_data.push(vec![
+            0.0, -5030.0, 0.0, 5000.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        ]);
 
         let sphere_data_u8: Vec<u8> = sphere_data
             .iter()
@@ -319,8 +315,8 @@ impl<'a> State<'a> {
         });
 
         // Camera data
-        let camera_position = [20.0, -35.0, 100.0];
-        let camera_rotation = [15.0, 10.0, 0.0];
+        let camera_position = [0.0, 0.0, 200.0];
+        let camera_rotation = [0.0, 0.0, 0.0];
 
         // Buffer for the camera position
         let camera_position_buffer = device.create_buffer_init(&BufferInitDescriptor {
@@ -328,7 +324,7 @@ impl<'a> State<'a> {
             contents: bytemuck::cast_slice(&camera_position),
             usage: BufferUsages::STORAGE | BufferUsages::COPY_DST,
         });
-        
+
         // Buffer for the camera rotation
         let camera_rotation_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("Camera Rotation Buffer"),
@@ -337,8 +333,16 @@ impl<'a> State<'a> {
         });
 
         // Write data to camera buffers
-        queue.write_buffer(&camera_position_buffer, 0, bytemuck::cast_slice(&camera_position));
-        queue.write_buffer(&camera_rotation_buffer, 0, bytemuck::cast_slice(&camera_rotation));
+        queue.write_buffer(
+            &camera_position_buffer,
+            0,
+            bytemuck::cast_slice(&camera_position),
+        );
+        queue.write_buffer(
+            &camera_rotation_buffer,
+            0,
+            bytemuck::cast_slice(&camera_rotation),
+        );
 
         Self {
             window,
@@ -608,7 +612,7 @@ async fn run() {
                         PhysicalKey::Code(KeyCode::KeyJ) => state.keys_pressed[9] = pressed,
                         PhysicalKey::Code(KeyCode::KeyO) => state.keys_pressed[10] = pressed,
                         PhysicalKey::Code(KeyCode::KeyU) => state.keys_pressed[11] = pressed,
-                        
+
                         _ => {}
                     }
                 }
