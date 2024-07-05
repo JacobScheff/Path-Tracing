@@ -22,7 +22,7 @@ struct Ray {
 };
 
 const sphere_count: u32 = 8; // Number of spheres in the scene
-const nums_per_sphere: u32 = 11; // Number of values per sphere in the storage buffer
+const nums_per_sphere: u32 = 11; // Number of values stored for every sphere
 const max_bounce_count: u32 = 20; // Max bounces per ray
 const rays_per_pixel: u32 = 50; // Number of rays per pixel
 const screen_size: vec2<f32> = vec2<f32>(1200.0, 600.0); // Size of the screen
@@ -31,7 +31,7 @@ const aspect_ratio: f32 = screen_size.x / screen_size.y; // Aspect ratio of the 
 
 @group(0) @binding(0) var<storage, read> sphere_data : array<array<f32, nums_per_sphere>, sphere_count>;
 @group(0) @binding(1) var<storage, read> frame_count: u32;
-@group(0) @binding(2) var<storage, read_write> frame_data: array<array<vec3<f32>, u32(screen_size.x)>, u32(screen_size.y)>;
+@group(0) @binding(2) var<storage, read_write> frame_data: array<array<vec3<f32>, u32(screen_size.x)>, u32(screen_size.y * 1.5)>;
 
 @vertex
 fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
@@ -48,7 +48,7 @@ fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
     var screen_width: f32 = tan(fov * 0.5) * 2.0;
     var screen_height: f32 = screen_width / aspect_ratio;
     var camera_position: vec3<f32> = vec3<f32>(90.0, 90.0, 130.0);
-    var camera_rotation: vec3<f32> = vec3<f32>(-28, 30.0, 0.0);
+    var camera_rotation: vec3<f32> = vec3<f32>(-28.0, 30.0, 0.0);
 
     var out: VertexOutput;
     out.pos = vec4<f32>(positions[i], 0.0, 1.0);

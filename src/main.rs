@@ -180,7 +180,7 @@ impl<'a> State<'a> {
         });
 
         // Frame data that starts off completely black
-        let frame_data = vec![vec![vec![0.0; 3]; size.width as usize]; size.height as usize];
+        let frame_data = vec![vec![vec![0.0; 3]; size.width as usize]; ((size.height as f32) * 1.5) as usize];
         let frame_data_flat: Vec<f32> = frame_data.iter().flatten().flatten().copied().collect();
         let frame_data_u8: Vec<u8> = frame_data_flat
             .iter()
