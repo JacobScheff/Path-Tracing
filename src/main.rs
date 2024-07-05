@@ -34,9 +34,118 @@ struct State<'a> {
     camera_rotation: [f32; 3],
     camera_position_buffer: wgpu::Buffer,
     camera_rotation_buffer: wgpu::Buffer,
+    keys_pressed: [bool; 12], // [W, S, D, A, Space, Shift, I, K, L, J, O, U]
 }
 
 impl<'a> State<'a> {
+    // Update the camera position based on the keys pressed
+    fn update_camera(&mut self) {
+        // Reset frame count if any key is pressed
+        if self.keys_pressed.iter().any(|&k| k) {
+            self.frame_count = 0;
+        }
+
+        let mut local_movement = [0.0, 0.0, 0.0];
+        let mut local_rotation = [0.0, 0.0, 0.0];
+
+        if self.keys_pressed[0] { // W
+            local_movement[2] -= CAMERA_SPEED;
+        }
+        if self.keys_pressed[1] { // S
+            local_movement[2] += CAMERA_SPEED;
+        }
+        if self.keys_pressed[2] { // D
+            local_movement[0] += CAMERA_SPEED;
+        }
+        if self.keys_pressed[3] { // A
+            local_movement[0] -= CAMERA_SPEED;
+        }
+        if self.keys_pressed[4] { // Space
+            local_movement[1] += CAMERA_SPEED;
+        }
+        if self.keys_pressed[5] { // Shift
+            local_movement[1] -= CAMERA_SPEED;
+        }
+
+        if self.keys_pressed[6] { // I
+            local_rotation[0] += CAMERA_ROT_SPEED;
+        }
+        if self.keys_pressed[7] { // K
+            local_rotation[0] -= CAMERA_ROT_SPEED;
+        }
+        if self.keys_pressed[8] { // L
+            local_rotation[1] += CAMERA_ROT_SPEED;
+        }
+        if self.keys_pressed[9] { // J
+            local_rotation[1] -= CAMERA_ROT_SPEED;
+        }
+        if self.keys_pressed[10] { // O
+            local_rotation[2] += CAMERA_ROT_SPEED;
+        }
+        if self.keys_pressed[11] { // U
+            local_rotation[2] -= CAMERA_ROT_SPEED;
+        }
+        
+        // Convert local to global
+        let global_movement = self.rotate_vector(local_movement, self.camera_rotation);
+        let global_rotation = self.rotate_vector(local_rotation, self.camera_rotation);
+
+        // Update new camera position and rotation
+        self.camera_position[0] += global_movement[0];
+        self.camera_position[1] += global_movement[1];
+        self.camera_position[2] += global_movement[2];
+
+        self.camera_rotation[0] += global_rotation[0];
+        self.camera_rotation[1] += global_rotation[1];
+        self.camera_rotation[2] += global_rotation[2];
+    }
+
+    // Rotate a vector by a given rotation
+    // fn rotate_vector(ray: vec3<f32>, angles: vec3<f32>) -> vec3<f32> {
+    //     let x = ray.x;
+    //     let y = ray.y;
+    //     let z = ray.z;
+    
+    //     let a = angles.x * 3.14159 / 180.0;
+    //     let b = angles.y * 3.14159 / 180.0;
+    //     let c = angles.z * 3.14159 / 180.0;
+    
+    //     let cos_a = cos(a);
+    //     let sin_a = sin(a);
+    //     let cos_b = cos(b);
+    //     let sin_b = sin(b);
+    //     let cos_c = cos(c);
+    //     let sin_c = sin(c);
+    
+    //     let x_rot = x * cos_c * cos_b + y * (cos_c * sin_b * sin_a - sin_c * cos_a) + z * (cos_c * sin_b * cos_a + sin_c * sin_a);
+    //     let y_rot = x * sin_c * cos_b + y * (sin_c * sin_b * sin_a + cos_c * cos_a) + z * (sin_c * sin_b * cos_a - cos_c * sin_a);
+    //     let z_rot = -x * sin_b + y * cos_b * sin_a + z * cos_b * cos_a;
+    
+    //     return vec3<f32>(x_rot, y_rot, z_rot);
+    // }
+    fn rotate_vector(&mut self, vector: [f32; 3], rotation: [f32; 3]) -> [f32; 3] {
+        let x = vector[0];
+        let y = vector[1];
+        let z = vector[2];
+        
+        let a = rotation[0].to_radians();
+        let b = rotation[1].to_radians();
+        let c = rotation[2].to_radians();
+
+        let cos_a = a.cos();
+        let sin_a = a.sin();
+        let cos_b = b.cos();
+        let sin_b = b.sin();
+        let cos_c = c.cos();
+        let sin_c = c.sin();
+
+        let x_rot = x * cos_c * cos_b + y * (cos_c * sin_b * sin_a - sin_c * cos_a) + z * (cos_c * sin_b * cos_a + sin_c * sin_a);
+        let y_rot = x * sin_c * cos_b + y * (sin_c * sin_b * sin_a + cos_c * cos_a) + z * (sin_c * sin_b * cos_a - cos_c * sin_a);
+        let z_rot = -x * sin_b + y * cos_b * sin_a + z * cos_b * cos_a;
+
+        [x_rot, y_rot, z_rot]
+    }
+
     async fn new(window: &'a Window) -> Self {
         let size = window.inner_size();
 
@@ -248,6 +357,7 @@ impl<'a> State<'a> {
             camera_rotation,
             camera_position_buffer,
             camera_rotation_buffer,
+            keys_pressed: [false; 12],
         }
     }
 
@@ -450,6 +560,7 @@ async fn run() {
     event_loop
         .run(move |event, elwt| match event {
             Event::UserEvent(..) => {
+                state.update_camera();
                 state.window.request_redraw();
             }
 
@@ -477,113 +588,29 @@ async fn run() {
                 WindowEvent::KeyboardInput {
                     event:
                         KeyEvent {
-                            physical_key: PhysicalKey::Code(KeyCode::KeyW),
-                            state: ElementState::Pressed,
-                            repeat: true,
+                            physical_key,
+                            state: element_state,
                             ..
                         },
                     ..
                 } => {
-                    state.camera_position[2] -= CAMERA_SPEED;
-                    state.frame_count = 0;
-                }
-
-                WindowEvent::KeyboardInput {
-                    event:
-                        KeyEvent {
-                            physical_key: PhysicalKey::Code(KeyCode::KeyS),
-                            state: ElementState::Pressed,
-                            repeat: true,
-                            ..
-                        },
-                    ..
-                } => {
-                    state.camera_position[2] += CAMERA_SPEED;
-                    state.frame_count = 0;
-                }
-
-                WindowEvent::KeyboardInput {
-                    event:
-                        KeyEvent {
-                            physical_key: PhysicalKey::Code(KeyCode::KeyU),
-                            state: ElementState::Pressed,
-                            repeat: true,
-                            ..
-                        },
-                    ..
-                } => {
-                    state.camera_rotation[0] += CAMERA_ROT_SPEED;
-                    state.frame_count = 0;
-                }
-
-                WindowEvent::KeyboardInput {
-                    event:
-                        KeyEvent {
-                            physical_key: PhysicalKey::Code(KeyCode::KeyJ),
-                            state: ElementState::Pressed,
-                            repeat: true,
-                            ..
-                        },
-                    ..
-                } => {
-                    state.camera_rotation[0] -= CAMERA_ROT_SPEED;
-                    state.frame_count = 0;
-                }
-
-                WindowEvent::KeyboardInput {
-                    event:
-                        KeyEvent {
-                            physical_key: PhysicalKey::Code(KeyCode::KeyK),
-                            state: ElementState::Pressed,
-                            repeat: true,
-                            ..
-                        },
-                    ..
-                } => {
-                    state.camera_rotation[1] += CAMERA_ROT_SPEED;
-                    state.frame_count = 0;
-                }
-
-                WindowEvent::KeyboardInput {
-                    event:
-                        KeyEvent {
-                            physical_key: PhysicalKey::Code(KeyCode::KeyH),
-                            state: ElementState::Pressed,
-                            repeat: true,
-                            ..
-                        },
-                    ..
-                } => {
-                    state.camera_rotation[1] -= CAMERA_ROT_SPEED;
-                    state.frame_count = 0;
-                }
-
-                WindowEvent::KeyboardInput {
-                    event:
-                        KeyEvent {
-                            physical_key: PhysicalKey::Code(KeyCode::KeyI),
-                            state: ElementState::Pressed,
-                            repeat: true,
-                            ..
-                        },
-                    ..
-                } => {
-                    state.camera_rotation[2] += CAMERA_ROT_SPEED;
-                    state.frame_count = 0;
-                }
-
-                WindowEvent::KeyboardInput {
-                    event:
-                        KeyEvent {
-                            physical_key: PhysicalKey::Code(KeyCode::KeyY),
-                            state: ElementState::Pressed,
-                            repeat: true,
-                            ..
-                        },
-                    ..
-                } => {
-                    state.camera_rotation[2] -= CAMERA_ROT_SPEED;
-                    state.frame_count = 0;
+                    let pressed = *element_state == ElementState::Pressed;
+                    match physical_key {
+                        PhysicalKey::Code(KeyCode::KeyW) => state.keys_pressed[0] = pressed,
+                        PhysicalKey::Code(KeyCode::KeyS) => state.keys_pressed[1] = pressed,
+                        PhysicalKey::Code(KeyCode::KeyD) => state.keys_pressed[2] = pressed,
+                        PhysicalKey::Code(KeyCode::KeyA) => state.keys_pressed[3] = pressed,
+                        PhysicalKey::Code(KeyCode::Space) => state.keys_pressed[4] = pressed,
+                        PhysicalKey::Code(KeyCode::ShiftLeft) => state.keys_pressed[5] = pressed,
+                        PhysicalKey::Code(KeyCode::KeyI) => state.keys_pressed[6] = pressed,
+                        PhysicalKey::Code(KeyCode::KeyK) => state.keys_pressed[7] = pressed,
+                        PhysicalKey::Code(KeyCode::KeyL) => state.keys_pressed[8] = pressed,
+                        PhysicalKey::Code(KeyCode::KeyJ) => state.keys_pressed[9] = pressed,
+                        PhysicalKey::Code(KeyCode::KeyO) => state.keys_pressed[10] = pressed,
+                        PhysicalKey::Code(KeyCode::KeyU) => state.keys_pressed[11] = pressed,
+                        
+                        _ => {}
+                    }
                 }
 
                 WindowEvent::RedrawRequested => match state.render() {

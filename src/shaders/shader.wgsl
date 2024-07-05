@@ -39,7 +39,7 @@ const sky_color_horizon: vec3<f32> = vec3<f32>(0.5, 0.7, 1.0);
 const sky_color_zenith: vec3<f32> = vec3<f32>(0.1, 0.25, 1.0);
 const ground_color: vec3<f32> = vec3<f32>(0.2, 0.2, 0.2);
 const sun_light_direction: vec3<f32> = vec3<f32>(0.5, 0.5, 0.5); // Not normalized
-const sun_intensity: f32 = 0.5;
+const sun_intensity: f32 = 5;
 const sun_focus: f32 = 10.0;
 
 @vertex
@@ -246,7 +246,7 @@ fn get_environment_light(ray: Ray) -> vec3<f32>
 {
     let sky_gradient_t = pow(smoothstep(0.0, 0.4, ray.dir.y), 0.35);
     let sky_gradient: vec3<f32> = lerp(sky_color_horizon, sky_color_zenith, sky_gradient_t);
-    let sun: f32 = pow(max(0.0, dot(ray.dir, -normalize(sun_light_direction))), sun_focus) * sun_intensity;
+    let sun: f32 = pow(max(0.0, dot(ray.dir, -sun_light_direction)), sun_focus) * sun_intensity;
 
     // Combine ground, sky, and sun
     let ground_to_sky_t = smoothstep(-0.01, 0.0, ray.dir.y);
