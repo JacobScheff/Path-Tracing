@@ -14,6 +14,7 @@ struct HitInfo {
     color: vec3<f32>,
     emission_color: vec3<f32>,
     emission_strength: f32,
+    smoothness: f32,
 };
 
 struct Ray {
@@ -22,7 +23,7 @@ struct Ray {
 };
 
 const sphere_count: u32 = 8; // Number of spheres in the scene
-const nums_per_sphere: u32 = 11; // Number of values stored for every sphere
+const nums_per_sphere: u32 = 12; // Number of values stored for every sphere
 const max_bounce_count: u32 = 20; // Max bounces per ray
 const rays_per_pixel: u32 = 50; // Number of rays per pixel
 const screen_size: vec2<f32> = vec2<f32>(1200.0, 600.0); // Size of the screen
@@ -102,7 +103,9 @@ fn trace(ray_in: Ray, seed: u32) -> vec3<f32> {
         var hit_info: HitInfo = calculate_ray_collision(ray);
         if(hit_info.did_hit) {
             ray.origin = hit_info.position;
-            ray.dir = normalize(hit_info.normal + random_direction(seed + i * 12345 + frame_count * 3939));
+            let diffuse_dir: vec3<f32> = normalize(hit_info.normal + random_direction(seed + i * 12345 + frame_count * 3939));
+            let specular_dir: vec3<f32> = reflect(ray.dir, hit_info.normal);
+            ray.dir = lerp(diffuse_dir, specular_dir, hit_info.smoothness);
 
             var emitted_light: vec3<f32> = hit_info.emission_color * hit_info.emission_strength;
             incoming_light += emitted_light * ray_color;
@@ -163,6 +166,7 @@ fn ray_sphere(ray_origin: vec3<f32>, ray_direction: vec3<f32>, sphere: array<f32
             hit_info.color = sphere_color;
             hit_info.emission_color = vec3<f32>(sphere[7], sphere[8], sphere[9]);
             hit_info.emission_strength = sphere[10];
+            hit_info.smoothness = sphere[11];
         }
     }
 
@@ -224,4 +228,10 @@ fn random_hemisphere_direction(normal: vec3<f32>, seed: u32) -> vec3<f32>
 {
   var dir = random_direction(seed);
   return dir * sign(dot(normal, dir));
+}
+
+// Lerp
+fn lerp(a: vec3<f32>, b: vec3<f32>, t: f32) -> vec3<f32>
+{
+  return a * (1.0 - t) + b * t;
 }

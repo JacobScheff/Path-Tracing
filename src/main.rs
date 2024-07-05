@@ -132,30 +132,32 @@ impl<'a> State<'a> {
             entries: &[],
         });
 
-        // Create sphere data - Format: [x, y, z, radius, r, g, b, er, eg, eb, emission_strength]
+        // Create sphere data - Format: [x, y, z, radius, r, g, b, er, eg, eb, emission_strength, smoothness]
         let mut sphere_data: Vec<Vec<f32>> = Vec::new();
         sphere_data.push(vec![
-            40.0, 0.0, 0.0, 10.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+            40.0, 0.0, 0.0, 10.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
         ]);
         sphere_data.push(vec![
-            -40.0, 0.0, 0.0, 10.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+            -40.0, 0.0, 0.0, 10.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
         ]);
         sphere_data.push(vec![
-            0.0, 40.0, 0.0, 10.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+            0.0, 40.0, 0.0, 10.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
         ]);
         sphere_data.push(vec![
-            0.0, -40.0, 0.0, 10.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+            0.0, -40.0, 0.0, 10.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
         ]);
         sphere_data.push(vec![
-            0.0, 0.0, 40.0, 10.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 40.0, 10.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
         ]);
         sphere_data.push(vec![
-            0.0, 0.0, -40.0, 10.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, -40.0, 10.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
         ]);
-        sphere_data.push(vec![0.0, 0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10.0]); // Light source
         sphere_data.push(vec![
-            150.0, -100.0, 0.0, 130.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0,
-        ]); // Large Sphere
+            0.0, 0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10.0, 0.0,
+        ]); // Light source
+        sphere_data.push(vec![
+            150.0, -100.0, 0.0, 130.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.5,
+        ]); // Large Mirror
 
         let sphere_data_u8: Vec<u8> = sphere_data
             .iter()
@@ -180,7 +182,8 @@ impl<'a> State<'a> {
         });
 
         // Frame data that starts off completely black
-        let frame_data = vec![vec![vec![0.0; 3]; size.width as usize]; ((size.height as f32) * 1.5) as usize];
+        let frame_data =
+            vec![vec![vec![0.0; 3]; size.width as usize]; ((size.height as f32) * 1.5) as usize];
         let frame_data_flat: Vec<f32> = frame_data.iter().flatten().flatten().copied().collect();
         let frame_data_u8: Vec<u8> = frame_data_flat
             .iter()
