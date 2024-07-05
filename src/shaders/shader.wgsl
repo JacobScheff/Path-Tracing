@@ -2,8 +2,6 @@ struct VertexOutput {
     @builtin(position) pos: vec4<f32>,
     @location(0) screen_width: f32,
     @location(1) screen_height: f32,
-    @location(2) camera_position: vec3<f32>,
-    @location(3) camera_rotation: vec3<f32>,
 };
 
 struct HitInfo {
@@ -30,9 +28,21 @@ const screen_size: vec2<f32> = vec2<f32>(1200.0, 600.0); // Size of the screen
 const fov: f32 = 60.0 * 3.14159 / 180.0; // Field of view in radians
 const aspect_ratio: f32 = screen_size.x / screen_size.y; // Aspect ratio of the screen
 
+// Camera settings
+const camera_position = vec3<f32>(20.0, -35.0, 100.0);
+const camera_rotation = vec3<f32>(15.0, 10.0, 0.0);
+
 @group(0) @binding(0) var<storage, read> sphere_data : array<array<f32, nums_per_sphere>, sphere_count>;
 @group(0) @binding(1) var<storage, read> frame_count: u32;
 @group(0) @binding(2) var<storage, read_write> frame_data: array<array<vec3<f32>, u32(screen_size.x)>, u32(screen_size.y * 1.5)>;
+
+// Environment lighting
+const sky_color_horizon: vec3<f32> = vec3<f32>(0.5, 0.7, 1.0);
+const sky_color_zenith: vec3<f32> = vec3<f32>(0.1, 0.25, 1.0);
+const ground_color: vec3<f32> = vec3<f32>(0.2, 0.2, 0.2);
+const sun_light_direction: vec3<f32> = vec3<f32>(0.5, 0.5, 0.5); // Not normalized
+const sun_intensity: f32 = 0.5;
+const sun_focus: f32 = 10.0;
 
 @vertex
 fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
@@ -48,15 +58,11 @@ fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
 
     var screen_width: f32 = tan(fov * 0.5) * 2.0;
     var screen_height: f32 = screen_width / aspect_ratio;
-    var camera_position: vec3<f32> = vec3<f32>(0.0, 0.0, 100.0);
-    var camera_rotation: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
 
     var out: VertexOutput;
     out.pos = vec4<f32>(positions[i], 0.0, 1.0);
     out.screen_width = screen_width;
     out.screen_height = screen_height;
-    out.camera_position = camera_position;
-    out.camera_rotation = camera_rotation;
     return out;
 }
 
@@ -72,11 +78,11 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     ray_direction = normalize(ray_direction);
 
     // Rotate ray direction vector
-    ray_direction = rotate_vector(ray_direction, in.camera_rotation);
+    ray_direction = rotate_vector(ray_direction, camera_rotation);
 
     // Create ray
     var ray: Ray;
-    ray.origin = in.camera_position;
+    ray.origin = camera_position;
     ray.dir = ray_direction;
 
     // Calculate pixel color
@@ -111,6 +117,7 @@ fn trace(ray_in: Ray, seed: u32) -> vec3<f32> {
             incoming_light += emitted_light * ray_color;
             ray_color *= hit_info.color;
         } else {
+            incoming_light += get_environment_light(ray) * ray_color;
             break;
         }
     }
@@ -199,39 +206,55 @@ fn rotate_vector(ray: vec3<f32>, angles: vec3<f32>) -> vec3<f32> {
 // Function to generate a random number between 0 and 1
 fn random_value(seed: u32) -> f32 
 {
-  var state = seed;
-  state = state ^ (state << 13);
-  state = state ^ (state >> 17);
-  state = state ^ (state << 5);
-  return f32(state) / 4294967296.0;  // Normalize to [0, 1)
+    var state = seed;
+    state = state ^ (state << 13);
+    state = state ^ (state >> 17);
+    state = state ^ (state << 5);
+    return f32(state) / 4294967296.0;  // Normalize to [0, 1)
 }
 
 // Random value in normal distribution (mean = 0, std_dev = 1)
 fn random_normal(seed: u32) -> f32
 {
-  var u1 = random_value(seed);
-  var u2 = random_value(seed * 7462);
-  return sqrt(-2.0 * log(u1)) * cos(2.0 * 3.14159 * u2);
+    var u1 = random_value(seed);
+    var u2 = random_value(seed * 7462);
+    return sqrt(-2.0 * log(u1)) * cos(2.0 * 3.14159 * u2);
 }
 
 // Random direction vector
 fn random_direction(seed: u32) -> vec3<f32>
 {
-  var x = random_normal(seed);
-  var y = random_normal(seed * 379);
-  var z = random_normal(seed * 123);
-  return normalize(vec3<f32>(x, y, z));
+    var x = random_normal(seed);
+    var y = random_normal(seed * 379);
+    var z = random_normal(seed * 123);
+    return normalize(vec3<f32>(x, y, z));
 }
 
 // Random direction in the hemisphere oriented around the given normal vector
 fn random_hemisphere_direction(normal: vec3<f32>, seed: u32) -> vec3<f32>
 {
-  var dir = random_direction(seed);
-  return dir * sign(dot(normal, dir));
+    var dir = random_direction(seed);
+    return dir * sign(dot(normal, dir));
 }
 
 // Lerp
 fn lerp(a: vec3<f32>, b: vec3<f32>, t: f32) -> vec3<f32>
 {
-  return a * (1.0 - t) + b * t;
+    return a * (1.0 - t) + b * t;
+}
+
+// Background environment lighting
+fn get_environment_light(ray: Ray) -> vec3<f32>
+{
+    let sky_gradient_t = pow(smoothstep(0.0, 0.4, ray.dir.y), 0.35);
+    let sky_gradient: vec3<f32> = lerp(sky_color_horizon, sky_color_zenith, sky_gradient_t);
+    let sun: f32 = pow(max(0.0, dot(ray.dir, -normalize(sun_light_direction))), sun_focus) * sun_intensity;
+
+    // Combine ground, sky, and sun
+    let ground_to_sky_t = smoothstep(-0.01, 0.0, ray.dir.y);
+    var sun_mask: f32 = 0.0;
+    if (ground_to_sky_t >= 1) {
+        sun_mask = 1.0;
+    }
+    return lerp(ground_color, sky_gradient, ground_to_sky_t) + sun * sun_mask;
 }
