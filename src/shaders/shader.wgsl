@@ -48,8 +48,8 @@ fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
 
     var screen_width: f32 = tan(fov * 0.5) * 2.0;
     var screen_height: f32 = screen_width / aspect_ratio;
-    var camera_position: vec3<f32> = vec3<f32>(90.0, 90.0, 130.0);
-    var camera_rotation: vec3<f32> = vec3<f32>(-28.0, 30.0, 0.0);
+    var camera_position: vec3<f32> = vec3<f32>(0.0, 0.0, 100.0);
+    var camera_rotation: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
 
     var out: VertexOutput;
     out.pos = vec4<f32>(positions[i], 0.0, 1.0);
