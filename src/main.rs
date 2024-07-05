@@ -28,6 +28,10 @@ struct State<'a> {
     frame_count_buffer: wgpu::Buffer,
     frame_data_buffer: wgpu::Buffer,
     sphere_buffer: wgpu::Buffer,
+    camera_position: [f32; 3],
+    camera_rotation: [f32; 3],
+    camera_position_buffer: wgpu::Buffer,
+    camera_rotation_buffer: wgpu::Buffer,
 }
 
 impl<'a> State<'a> {
@@ -111,6 +115,26 @@ impl<'a> State<'a> {
                     },
                     count: None,
                 },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 3,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 4,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
             ],
             label: Some("Sphere Bind Group Layout"),
         });
@@ -183,6 +207,28 @@ impl<'a> State<'a> {
             usage: BufferUsages::STORAGE | BufferUsages::COPY_DST,
         });
 
+        // Camera data
+        let camera_position = [20.0, -35.0, 100.0];
+        let camera_rotation = [15.0, 10.0, 0.0];
+
+        // Buffer for the camera position
+        let camera_position_buffer = device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Camera Position Buffer"),
+            contents: bytemuck::cast_slice(&camera_position),
+            usage: BufferUsages::STORAGE | BufferUsages::COPY_DST,
+        });
+        
+        // Buffer for the camera rotation
+        let camera_rotation_buffer = device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Camera Rotation Buffer"),
+            contents: bytemuck::cast_slice(&camera_rotation),
+            usage: BufferUsages::STORAGE | BufferUsages::COPY_DST,
+        });
+
+        // Write data to camera buffers
+        queue.write_buffer(&camera_position_buffer, 0, bytemuck::cast_slice(&camera_position));
+        queue.write_buffer(&camera_rotation_buffer, 0, bytemuck::cast_slice(&camera_rotation));
+
         Self {
             window,
             surface,
@@ -196,6 +242,10 @@ impl<'a> State<'a> {
             frame_count_buffer,
             frame_data_buffer,
             sphere_buffer,
+            camera_position,
+            camera_rotation,
+            camera_position_buffer,
+            camera_rotation_buffer,
         }
     }
 
@@ -326,6 +376,26 @@ async fn run() {
                         },
                         count: None,
                     },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 3,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Storage { read_only: true },
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 4,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Storage { read_only: true },
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
                 ],
                 label: Some("Sphere Bind Group Layout"),
             });
@@ -344,6 +414,14 @@ async fn run() {
             wgpu::BindGroupEntry {
                 binding: 2,
                 resource: state.frame_data_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 3,
+                resource: state.camera_position_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 4,
+                resource: state.camera_rotation_buffer.as_entire_binding(),
             },
         ],
     });

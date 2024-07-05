@@ -28,13 +28,11 @@ const screen_size: vec2<f32> = vec2<f32>(1200.0, 600.0); // Size of the screen
 const fov: f32 = 60.0 * 3.14159 / 180.0; // Field of view in radians
 const aspect_ratio: f32 = screen_size.x / screen_size.y; // Aspect ratio of the screen
 
-// Camera settings
-const camera_position = vec3<f32>(20.0, -35.0, 100.0);
-const camera_rotation = vec3<f32>(15.0, 10.0, 0.0);
-
 @group(0) @binding(0) var<storage, read> sphere_data : array<array<f32, nums_per_sphere>, sphere_count>;
 @group(0) @binding(1) var<storage, read> frame_count: u32;
 @group(0) @binding(2) var<storage, read_write> frame_data: array<array<vec3<f32>, u32(screen_size.x)>, u32(screen_size.y * 1.5)>;
+@group(0) @binding(3) var<storage, read> camera_position: vec3<f32>;
+@group(0) @binding(4) var<storage, read> camera_rotation: vec3<f32>;
 
 // Environment lighting
 const sky_color_horizon: vec3<f32> = vec3<f32>(0.5, 0.7, 1.0);
