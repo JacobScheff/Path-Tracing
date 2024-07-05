@@ -15,6 +15,7 @@ use winit::{
 const SCREEN_SIZE: (u32, u32) = (1200, 600);
 const TIME_BETWEEN_FRAMES: u64 = 17;
 const CAMERA_SPEED: f32 = 0.5;
+const CAMERA_ROT_SPEED: f32 = 2.0;
 
 struct State<'a> {
     surface: wgpu::Surface<'a>,
@@ -498,6 +499,90 @@ async fn run() {
                     ..
                 } => {
                     state.camera_position[2] += CAMERA_SPEED;
+                    state.frame_count = 0;
+                }
+
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            physical_key: PhysicalKey::Code(KeyCode::KeyU),
+                            state: ElementState::Pressed,
+                            repeat: true,
+                            ..
+                        },
+                    ..
+                } => {
+                    state.camera_rotation[0] += CAMERA_ROT_SPEED;
+                    state.frame_count = 0;
+                }
+
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            physical_key: PhysicalKey::Code(KeyCode::KeyJ),
+                            state: ElementState::Pressed,
+                            repeat: true,
+                            ..
+                        },
+                    ..
+                } => {
+                    state.camera_rotation[0] -= CAMERA_ROT_SPEED;
+                    state.frame_count = 0;
+                }
+
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            physical_key: PhysicalKey::Code(KeyCode::KeyK),
+                            state: ElementState::Pressed,
+                            repeat: true,
+                            ..
+                        },
+                    ..
+                } => {
+                    state.camera_rotation[1] += CAMERA_ROT_SPEED;
+                    state.frame_count = 0;
+                }
+
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            physical_key: PhysicalKey::Code(KeyCode::KeyH),
+                            state: ElementState::Pressed,
+                            repeat: true,
+                            ..
+                        },
+                    ..
+                } => {
+                    state.camera_rotation[1] -= CAMERA_ROT_SPEED;
+                    state.frame_count = 0;
+                }
+
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            physical_key: PhysicalKey::Code(KeyCode::KeyI),
+                            state: ElementState::Pressed,
+                            repeat: true,
+                            ..
+                        },
+                    ..
+                } => {
+                    state.camera_rotation[2] += CAMERA_ROT_SPEED;
+                    state.frame_count = 0;
+                }
+
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            physical_key: PhysicalKey::Code(KeyCode::KeyY),
+                            state: ElementState::Pressed,
+                            repeat: true,
+                            ..
+                        },
+                    ..
+                } => {
+                    state.camera_rotation[2] -= CAMERA_ROT_SPEED;
                     state.frame_count = 0;
                 }
 
