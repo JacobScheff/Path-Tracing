@@ -41,6 +41,7 @@ const ground_color: vec3<f32> = vec3<f32>(0.2, 0.2, 0.2);
 const sun_light_direction: vec3<f32> = vec3<f32>(0, -0.4, 0.5); // Not normalized
 const sun_intensity: f32 = 3;
 const sun_focus: f32 = 200;
+const use_environment_lighting: bool = false;
 
 @vertex
 fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
@@ -115,7 +116,9 @@ fn trace(ray_in: Ray, seed: u32) -> vec3<f32> {
             incoming_light += emitted_light * ray_color;
             ray_color *= hit_info.color;
         } else {
-            incoming_light += get_environment_light(ray) * ray_color;
+            if(use_environment_lighting){
+                incoming_light += get_environment_light(ray) * ray_color;
+            }
             break;
         }
     }

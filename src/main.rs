@@ -263,7 +263,7 @@ impl<'a> State<'a> {
         // Create sphere data - Format: [x, y, z, radius, r, g, b, er, eg, eb, emission_strength, smoothness]
         let mut sphere_data: Vec<Vec<f32>> = Vec::new();
         sphere_data.push(vec![
-            -40.0, 0.0, 0.0, 10.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.75,
+            -40.0, 0.0, 0.0, 10.0, 0.25, 0.25, 1.0, 0.0, 0.0, 0.0, 0.0, 0.9,
         ]);
         sphere_data.push(vec![
             40.0, 0.0, 0.0, 10.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
@@ -274,6 +274,9 @@ impl<'a> State<'a> {
         sphere_data.push(vec![
             0.0, -5030.0, 0.0, 5000.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
         ]);
+        sphere_data.push(vec![
+            20.0, 40.0, -20.0, 10.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10.0, 0.0,
+        ]); // Light source
 
         let sphere_data_u8: Vec<u8> = sphere_data
             .iter()
