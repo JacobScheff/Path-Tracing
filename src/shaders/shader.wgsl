@@ -24,7 +24,7 @@ const sphere_count: u32 = 5; // Number of spheres in the scene
 const nums_per_sphere: u32 = 12; // Number of values stored for every sphere
 const max_bounce_count: u32 = 20; // Max bounces per ray
 const rays_per_pixel: u32 = 20; // Number of rays per pixel
-const screen_size: vec2<f32> = vec2<f32>(1200.0, 600.0); // Size of the screen
+const screen_size: vec2<f32> = vec2<f32>(1800.0, 900.0); // Size of the screen
 const fov: f32 = 60.0 * 3.14159 / 180.0; // Field of view in radians
 const aspect_ratio: f32 = screen_size.x / screen_size.y; // Aspect ratio of the screen
 
