@@ -20,7 +20,7 @@ struct Ray {
     dir: vec3<f32>,
 };
 
-const sphere_count: u32 = 9; // Number of spheres in the scene
+const sphere_count: u32 = 5; // Number of spheres in the scene
 const nums_per_sphere: u32 = 12; // Number of values stored for every sphere
 const max_bounce_count: u32 = 20; // Max bounces per ray
 const rays_per_pixel: u32 = 20; // Number of rays per pixel
