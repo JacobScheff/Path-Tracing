@@ -108,7 +108,7 @@ fn trace(ray_in: Ray, seed: u32) -> vec3<f32> {
         var hit_info: HitInfo = calculate_ray_collision(ray);
         if(hit_info.did_hit) {
             ray.origin = hit_info.position;
-            let diffuse_dir: vec3<f32> = normalize(hit_info.normal + random_direction(seed + i * 12345 + frame_count * 3939));
+            let diffuse_dir: vec3<f32> = normalize(hit_info.normal + random_direction(seed + i * 12345 + frame_count * 393939));
             let specular_dir: vec3<f32> = reflect(ray.dir, hit_info.normal);
             ray.dir = lerp(diffuse_dir, specular_dir, hit_info.smoothness);
 
