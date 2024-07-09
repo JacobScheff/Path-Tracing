@@ -588,7 +588,7 @@ async fn run() {
                         },
                     ..
                 } => {
-                    println!("Goodbye see you!");
+                    println!("Closing window");
                     elwt.exit();
                 }
 
