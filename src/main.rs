@@ -240,6 +240,16 @@ impl<'a> State<'a> {
                     },
                     count: None,
                 },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 5,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
             ],
             label: Some("Sphere Bind Group Layout"),
         });
@@ -302,8 +312,6 @@ impl<'a> State<'a> {
 
         // Reshape triangle data into a 2D array
         let triangle_data: Vec<Vec<f32>> = triangle_data.chunks(3).map(|c| c.to_vec()).collect();
-
-        println!("{:?}", triangle_data);
 
         let triangle_data_u8: Vec<u8> = triangle_data
             .iter()
@@ -555,6 +563,16 @@ async fn run() {
                         },
                         count: None,
                     },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 5,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Storage { read_only: true },
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
                 ],
                 label: Some("Sphere Bind Group Layout"),
             });
@@ -581,6 +599,10 @@ async fn run() {
             wgpu::BindGroupEntry {
                 binding: 4,
                 resource: state.camera_rotation_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 5,
+                resource: state.triangle_buffer.as_entire_binding(),
             },
         ],
     });

@@ -21,3 +21,4 @@ console.log(`Writing binary data to: ${output_path}`)
 fs.writeFileSync(output_path, buffer)
 
 console.log("Done!")
+console.log("Amount of triangles: ", vertices.length / 9)
