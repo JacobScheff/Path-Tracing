@@ -300,15 +300,25 @@ impl<'a> State<'a> {
         let triangle_data = triangle_data.chunks(4).collect::<Vec<_>>();
         let triangle_data = triangle_data.iter().map(|d| f32::from_ne_bytes([d[0], d[1], d[2], d[3]])).collect::<Vec<_>>();
 
+        // Reshape triangle data into a 2D array
+        let triangle_data: Vec<Vec<f32>> = triangle_data.chunks(3).map(|c| c.to_vec()).collect();
+
+        println!("{:?}", triangle_data);
+
+        let triangle_data_u8: Vec<u8> = triangle_data
+            .iter()
+            .flat_map(|s| s.iter().map(|f| f.to_ne_bytes().to_vec()).flatten())
+            .collect();
+
         // Buffer for triangle data
         let triangle_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("Triangle Buffer Data"),
-            contents: bytemuck::cast_slice(&triangle_data),
+            contents: bytemuck::cast_slice(&triangle_data_u8),
             usage: BufferUsages::STORAGE | BufferUsages::COPY_DST,
         });
 
         // Write triangle data to buffer
-        queue.write_buffer(&triangle_buffer, 0, bytemuck::cast_slice(&triangle_data));
+        queue.write_buffer(&triangle_buffer, 0, bytemuck::cast_slice(&triangle_data_u8));
 
         // Buffer for the frame count
         let frame_count_buffer = device.create_buffer_init(&BufferInitDescriptor {
