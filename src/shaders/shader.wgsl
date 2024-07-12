@@ -137,7 +137,7 @@ fn calculate_ray_collision(ray: Ray) -> HitInfo {
         var sphere_center: vec3<f32> = vec3<f32>(sphere_data[i][0], sphere_data[i][1], sphere_data[i][2]);
         var sphere_radius: f32 = sphere_data[i][3];
 
-        var hit_info: HitInfo = ray_sphere(ray.origin, ray.dir, sphere_data[i]);
+        var hit_info: HitInfo = ray_sphere(ray, sphere_data[i]);
 
         if hit_info.did_hit && hit_info.distance < closest_hit.distance {
             closest_hit = hit_info;
@@ -147,7 +147,7 @@ fn calculate_ray_collision(ray: Ray) -> HitInfo {
     return closest_hit;
 }
 
-fn ray_sphere(ray_origin: vec3<f32>, ray_direction: vec3<f32>, sphere: array<f32, nums_per_sphere>) -> HitInfo {
+fn ray_sphere(ray: Ray, sphere: array<f32, nums_per_sphere>) -> HitInfo {
     var sphere_center: vec3<f32> = vec3<f32>(sphere[0], sphere[1], sphere[2]);
     var sphere_radius: f32 = sphere[3];
     var sphere_color: vec3<f32> = vec3<f32>(sphere[4], sphere[5], sphere[6]);
@@ -155,9 +155,9 @@ fn ray_sphere(ray_origin: vec3<f32>, ray_direction: vec3<f32>, sphere: array<f32
     var hit_info: HitInfo;
     hit_info.did_hit = false;
 
-    var offset_ray_origin: vec3<f32> = ray_origin - sphere_center;
-    let a: f32 = dot(ray_direction, ray_direction);
-    let b = 2.0 * dot(offset_ray_origin, ray_direction);
+    var offset_ray_origin: vec3<f32> = ray.origin - sphere_center;
+    let a: f32 = dot(ray.dir, ray.dir);
+    let b = 2.0 * dot(offset_ray_origin, ray.dir);
     let c = dot(offset_ray_origin, offset_ray_origin) - sphere_radius * sphere_radius;
     let discriminant = b * b - 4.0 * a * c;
 
@@ -170,7 +170,7 @@ fn ray_sphere(ray_origin: vec3<f32>, ray_direction: vec3<f32>, sphere: array<f32
         if distance >= 0.0 {
             hit_info.did_hit = true;
             hit_info.distance = distance;
-            hit_info.position = ray_origin + ray_direction * distance;
+            hit_info.position = ray.origin + ray.dir * distance;
             hit_info.normal = normalize(hit_info.position - sphere_center);
             hit_info.color = sphere_color;
             hit_info.emission_color = vec3<f32>(sphere[7], sphere[8], sphere[9]);
