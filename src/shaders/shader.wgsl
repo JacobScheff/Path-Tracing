@@ -161,8 +161,8 @@ fn calculate_ray_collision(ray: Ray) -> HitInfo {
             if hit_info.did_hit && hit_info.distance < closest_hit.distance {
                 closest_hit = hit_info;
             }
-        }
-    // }
+        // }
+    }
 
     return closest_hit;
 }
