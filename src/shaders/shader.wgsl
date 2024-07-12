@@ -34,7 +34,7 @@ const aspect_ratio: f32 = screen_size.x / screen_size.y; // Aspect ratio of the 
 @group(0) @binding(2) var<storage, read_write> frame_data: array<array<vec3<f32>, u32(screen_size.x)>, u32(screen_size.y * 1.5)>;
 @group(0) @binding(3) var<storage, read> camera_position: vec3<f32>;
 @group(0) @binding(4) var<storage, read> camera_rotation: vec3<f32>;
-@group(0) @binding(5) var<storage, read> triangle_data: array<array<vec3<f32>, 4>, triangle_count>;
+@group(0) @binding(5) var<storage, read> triangle_data: array<vec3<f32>, u32(i32(triangle_count) * 4)>;
 @group(0) @binding(6) var<storage, read> bounding_box: array<vec3<f32>, 2>;
 
 // Environment lighting
@@ -150,7 +150,7 @@ fn calculate_ray_collision(ray: Ray) -> HitInfo {
     if (ray_box(ray, bounding_box)) {
         // Check for triangle intersections
         for (var i = 0u; i < triangle_count; i = i + 1u) {
-            var hit_info: HitInfo = ray_triangle(ray, triangle_data[i]);
+            var hit_info: HitInfo = ray_triangle(ray, array<vec3<f32>, 4>(triangle_data[i * 4], triangle_data[i * 4 + 1], triangle_data[i * 4 + 2], triangle_data[i * 4 + 3]));
 
             if hit_info.did_hit && hit_info.distance < closest_hit.distance {
                 closest_hit = hit_info;
