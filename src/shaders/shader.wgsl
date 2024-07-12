@@ -44,7 +44,7 @@ const ground_color: vec3<f32> = vec3<f32>(0.2, 0.2, 0.2);
 const sun_light_direction: vec3<f32> = vec3<f32>(0, -0.4, 0.5); // Not normalized
 const sun_intensity: f32 = 3;
 const sun_focus: f32 = 200;
-const use_environment_lighting: bool = false;
+const use_environment_lighting: bool = true;
 
 @vertex
 fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
