@@ -233,7 +233,7 @@ fn ray_triangle(ray: Ray, triangle: array<vec3<f32>, 4>) -> HitInfo {
         hit_info.position = ray.origin + ray.dir * dst;
         hit_info.normal = triangle[3];
         hit_info.color = vec3<f32>(0.0, 0.0, 1.0);
-        hit_info.emission_color = vec3<f32>(0.0, 0.0, 0.0);
+        hit_info.emission_color = vec3<f32>(1.0, 1.0, 1.0);
         hit_info.emission_strength = 0.0;
         hit_info.smoothness = 0.0;
     }
