@@ -14,7 +14,7 @@ use winit::{
 
 const SCREEN_SIZE: (u32, u32) = (1200, 600);
 const TIME_BETWEEN_FRAMES: u64 = 17;
-const CAMERA_SPEED: f32 = 0.5;
+const CAMERA_SPEED: f32 = 1.0;
 const CAMERA_ROT_SPEED: f32 = 1.0;
 
 struct State<'a> {
