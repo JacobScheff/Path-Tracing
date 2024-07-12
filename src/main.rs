@@ -343,9 +343,11 @@ impl<'a> State<'a> {
                 }
             }
         }
+
+        let bounding_box: Vec<f32> = vec![bounding_box[0][0], bounding_box[0][1], bounding_box[0][2], bounding_box[1][0], bounding_box[1][1], bounding_box[1][2]];
         
         // // Convert bounding box to u8
-        let bounding_box_u8: Vec<u8> = bounding_box.iter().flatten().map(|f| f.to_ne_bytes().to_vec()).flatten().collect();
+        let bounding_box_u8: Vec<u8> = bounding_box.iter().map(|f| f.to_ne_bytes().to_vec()).flatten().collect();
 
         // Buffer for the bounding box
         let bounding_box_buffer = device.create_buffer_init(&BufferInitDescriptor {
@@ -379,8 +381,8 @@ impl<'a> State<'a> {
         });
 
         // Camera data
-        let camera_position = [0.0, 0.0, 200.0];
-        let camera_rotation = [0.0, 0.0, 0.0];
+        let camera_position = [200.0, 0.0, 200.0];
+        let camera_rotation = [0.0, 90.0, 0.0];
 
         // Buffer for the camera position
         let camera_position_buffer = device.create_buffer_init(&BufferInitDescriptor {

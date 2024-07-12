@@ -35,7 +35,7 @@ const aspect_ratio: f32 = screen_size.x / screen_size.y; // Aspect ratio of the 
 @group(0) @binding(3) var<storage, read> camera_position: vec3<f32>;
 @group(0) @binding(4) var<storage, read> camera_rotation: vec3<f32>;
 @group(0) @binding(5) var<storage, read> triangle_data: array<f32, u32(i32(triangle_count) * 4 * 3)>;
-@group(0) @binding(6) var<storage, read> bounding_box: array<vec3<f32>, 2>;
+@group(0) @binding(6) var<storage, read> bounding_box: array<f32, 6>;
 
 // Environment lighting
 const sky_color_horizon: vec3<f32> = vec3<f32>(0.5, 0.7, 1.0);
@@ -147,7 +147,7 @@ fn calculate_ray_collision(ray: Ray) -> HitInfo {
     }
 
     // Check if ray intersects bounding box
-    // if (ray_box(ray, bounding_box)) {
+    if (ray_box(ray, bounding_box)) {
         // Check for triangle intersections
         for (var i = 0u; i < triangle_count; i = i + 1u) {
             let triangle: array<vec3<f32>, 4> = array<vec3<f32>, 4>(
@@ -161,15 +161,15 @@ fn calculate_ray_collision(ray: Ray) -> HitInfo {
             if hit_info.did_hit && hit_info.distance < closest_hit.distance {
                 closest_hit = hit_info;
             }
-        // }
+        }
     }
 
     return closest_hit;
 }
 
-fn ray_box(ray: Ray, bounding_box: array<vec3<f32>, 2>) -> bool {
-    let min_bound = bounding_box[0];
-    let max_bound = bounding_box[1];
+fn ray_box(ray: Ray, bounding_box: array<f32, 6>) -> bool {
+    let min_bound: vec3<f32> = vec3<f32>(bounding_box[0], bounding_box[1], bounding_box[2]);  
+    let max_bound: vec3<f32> = vec3<f32>(bounding_box[3], bounding_box[4], bounding_box[5]);
 
     let t_min = (min_bound - ray.origin) / ray.dir;
     let t_max = (max_bound - ray.origin) / ray.dir;
