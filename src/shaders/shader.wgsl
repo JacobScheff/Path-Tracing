@@ -34,7 +34,7 @@ const aspect_ratio: f32 = screen_size.x / screen_size.y; // Aspect ratio of the 
 @group(0) @binding(2) var<storage, read_write> frame_data: array<array<vec3<f32>, u32(screen_size.x)>, u32(screen_size.y * 1.5)>;
 @group(0) @binding(3) var<storage, read> camera_position: vec3<f32>;
 @group(0) @binding(4) var<storage, read> camera_rotation: vec3<f32>;
-@group(0) @binding(5) var<storage, read> triangle_data: array<array<vec3<f32>, 3>, triangle_count>;
+@group(0) @binding(5) var<storage, read> triangle_data: array<array<vec3<f32>, 4>, triangle_count>;
 @group(0) @binding(6) var<storage, read> bounding_box_data: array<vec3<f32>, 2>;
 
 // Environment lighting
@@ -208,7 +208,7 @@ fn ray_box(ray: Ray, bounding_box: array<vec3<f32>, 2>) -> bool {
     return true;
 }
 
-fn ray_triangle(ray: Ray, triangle: array<vec3<f32>, 3>) -> HitInfo {
+fn ray_triangle(ray: Ray, triangle: array<vec3<f32>, 4>) -> HitInfo {
     var hit_info: HitInfo;
     hit_info.did_hit = false;
 
@@ -231,7 +231,7 @@ fn ray_triangle(ray: Ray, triangle: array<vec3<f32>, 3>) -> HitInfo {
         hit_info.did_hit = true;
         hit_info.distance = dst;
         hit_info.position = ray.origin + ray.dir * dst;
-        hit_info.normal = normalize(normal_vector); // TODO: Test using stl-given normals
+        hit_info.normal = triangle[3];
         hit_info.color = vec3<f32>(0.0, 0.0, 1.0);
         hit_info.emission_color = vec3<f32>(0.0, 0.0, 0.0);
         hit_info.emission_strength = 0.0;

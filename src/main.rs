@@ -321,8 +321,8 @@ impl<'a> State<'a> {
         let triangle_data = triangle_data.chunks(4).collect::<Vec<_>>();
         let triangle_data = triangle_data.iter().map(|d| f32::from_ne_bytes([d[0], d[1], d[2], d[3]])).collect::<Vec<_>>();
 
-        // Reshape triangle data into a 3D array
-        let triangle_data: Vec<Vec<Vec<f32>>> = triangle_data.chunks(3).map(|c| c.chunks(3).map(|c| c.to_vec()).collect()).collect();
+        // Reshape triangle data into a 3D array. Each triangle has 3 vertices and 1 normal, each vertex and normal has 3 coordinates
+        let triangle_data: Vec<Vec<Vec<f32>>> = triangle_data.chunks(3).map(|c| c.chunks(4).map(|c| c.to_vec()).collect()).collect();
 
         // Convert triangle data to u8
         let triangle_data_u8: Vec<u8> = triangle_data.iter().flatten().flatten().map(|f| f.to_ne_bytes().to_vec()).flatten().collect();

@@ -11,10 +11,19 @@ const input = fs.readFileSync(input_path).toString()
 // Convert the input file to a 1d array of floats that store the vertices of the triangles
 console.log("Parisng data")
 let vertices = input.split("\n").filter(line => line.includes("vertex")).map(line => line.split("vertex ")[1].split(" ").map(Number)).flat().map(n => n * scale)
+let normals = input.split("\n").filter(line => line.includes("facet normal")).map(line => line.split("facet normal ")[1].split(" ").map(Number)).flat()
+
+// Combine the vertices and normals into one array. Normals go after the 3 vertices
+console.log("Combining vertices and normals")
+let combined = []
+for (let i = 0; i < vertices.length; i += 9) {
+    combined.push(...vertices.slice(i, i + 9))
+    combined.push(...normals.slice(i / 9 * 3, i / 9 * 3 + 3))
+}
 
 // Convert to binary
 console.log("Converting to binary")
-const buffer = Buffer.alloc(vertices.length * 4)
+const buffer = Buffer.alloc(combined.length * 4)
 vertices.forEach((vertex, i) => buffer.writeFloatLE(vertex, i * 4))
 
 // Write the binary data to the output file
