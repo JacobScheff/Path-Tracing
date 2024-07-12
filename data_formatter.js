@@ -2,7 +2,7 @@ const input_path = "objects/knight.stl"
 const output_path = "objects/knight.bin"
 
 const fs = require('fs')
-const scale = 1
+const scale = 0.1
 
 // Read the input file
 console.log(`Reading input file: ${input_path}`)

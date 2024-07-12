@@ -35,7 +35,7 @@ const aspect_ratio: f32 = screen_size.x / screen_size.y; // Aspect ratio of the 
 @group(0) @binding(3) var<storage, read> camera_position: vec3<f32>;
 @group(0) @binding(4) var<storage, read> camera_rotation: vec3<f32>;
 @group(0) @binding(5) var<storage, read> triangle_data: array<array<vec3<f32>, 4>, triangle_count>;
-@group(0) @binding(6) var<storage, read> bounding_box_data: array<vec3<f32>, 2>;
+@group(0) @binding(6) var<storage, read> bounding_box: array<vec3<f32>, 2>;
 
 // Environment lighting
 const sky_color_horizon: vec3<f32> = vec3<f32>(0.5, 0.7, 1.0);
@@ -147,9 +147,9 @@ fn calculate_ray_collision(ray: Ray) -> HitInfo {
     }
 
     // Check if ray intersects bounding box
-    if (ray_box(ray, bounding_box_data)) {
+    if (ray_box(ray, bounding_box)) {
         // Check for triangle intersections
-        for (var i = 0u; i < 5; i = i + 1u) {
+        for (var i = 0u; i < triangle_count; i = i + 1u) {
             var hit_info: HitInfo = ray_triangle(ray, triangle_data[i]);
 
             if hit_info.did_hit && hit_info.distance < closest_hit.distance {
@@ -162,50 +162,19 @@ fn calculate_ray_collision(ray: Ray) -> HitInfo {
 }
 
 fn ray_box(ray: Ray, bounding_box: array<vec3<f32>, 2>) -> bool {
-    var tmin: f32 = (bounding_box[0].x - ray.origin.x) / ray.dir.x;
-    var tmax: f32 = (bounding_box[1].x - ray.origin.x) / ray.dir.x;
+    let min_bound = bounding_box[0];
+    let max_bound = bounding_box[1];
 
-    if (tmin > tmax) {
-        let temp: f32 = tmin;
-        tmin = tmax;
-        tmax = temp;
-    }
+    let t_min = (min_bound - ray.origin) / ray.dir;
+    let t_max = (max_bound - ray.origin) / ray.dir;
 
-    var tymin: f32 = (bounding_box[0].y - ray.origin.y) / ray.dir.y;
-    var tymax: f32 = (bounding_box[1].y - ray.origin.y) / ray.dir.y;
+    let t1 = min(t_min, t_max);
+    let t2 = max(t_min, t_max);
 
-    if (tymin > tymax) {
-        let temp: f32 = tymin;
-        tymin = tymax;
-        tymax = temp;
-    }
+    let t_near = max(max(t1.x, t1.y), t1.z);
+    let t_far = min(min(t2.x, t2.y), t2.z);
 
-    if ((tmin > tymax) || (tymin > tmax)) {
-        return false;
-    }
-
-    if (tymin > tmin) {
-        tmin = tymin;
-    }
-
-    if (tymax < tmax) {
-        tmax = tymax;
-    }
-
-    var tzmin: f32 = (bounding_box[0].z - ray.origin.z) / ray.dir.z;
-    var tzmax: f32 = (bounding_box[1].z - ray.origin.z) / ray.dir.z;
-
-    if (tzmin > tzmax) {
-        let temp: f32 = tzmin;
-        tzmin = tzmax;
-        tzmax = temp;
-    }
-
-    if ((tmin > tzmax) || (tzmin > tmax)) {
-        return false;
-    }
-
-    return true;
+    return t_near <= t_far && t_far >= 0.0;
 }
 
 fn ray_triangle(ray: Ray, triangle: array<vec3<f32>, 4>) -> HitInfo {
@@ -232,8 +201,8 @@ fn ray_triangle(ray: Ray, triangle: array<vec3<f32>, 4>) -> HitInfo {
         hit_info.distance = dst;
         hit_info.position = ray.origin + ray.dir * dst;
         hit_info.normal = triangle[3];
-        hit_info.color = vec3<f32>(0.0, 0.0, 1.0);
-        hit_info.emission_color = vec3<f32>(1.0, 1.0, 1.0);
+        hit_info.color = vec3<f32>(1.0, 1.0, 1.0);
+        hit_info.emission_color = vec3<f32>(0.0, 0.0, 0.0);
         hit_info.emission_strength = 0.0;
         hit_info.smoothness = 0.0;
     }
