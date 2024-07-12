@@ -2,7 +2,7 @@ const input_path = "objects/knight.stl"
 const output_path = "objects/knight.bin"
 
 const fs = require('fs')
-const scale = 0.1
+const scale = 1
 
 // Read the input file
 console.log(`Reading input file: ${input_path}`)
@@ -24,7 +24,7 @@ for (let i = 0; i < vertices.length; i += 9) {
 // Convert to binary
 console.log("Converting to binary")
 const buffer = Buffer.alloc(combined.length * 4)
-vertices.forEach((vertex, i) => buffer.writeFloatLE(vertex, i * 4))
+combined.forEach((n, i) => buffer.writeFloatLE(n, i * 4))
 
 // Write the binary data to the output file
 console.log(`Writing binary data to: ${output_path}`)
