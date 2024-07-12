@@ -34,7 +34,7 @@ const aspect_ratio: f32 = screen_size.x / screen_size.y; // Aspect ratio of the 
 @group(0) @binding(2) var<storage, read_write> frame_data: array<array<vec3<f32>, u32(screen_size.x)>, u32(screen_size.y * 1.5)>;
 @group(0) @binding(3) var<storage, read> camera_position: vec3<f32>;
 @group(0) @binding(4) var<storage, read> camera_rotation: vec3<f32>;
-@group(0) @binding(5) var<storage, read> triangle_data: array<f32, u32(i32(triangle_count) * 4 * 3)>;
+@group(0) @binding(5) var<storage, read> triangle_data: array<f32, u32(i32(triangle_count) * 3 * 3)>;
 @group(0) @binding(6) var<storage, read> bounding_box: array<f32, 6>;
 
 // Environment lighting
@@ -150,11 +150,10 @@ fn calculate_ray_collision(ray: Ray) -> HitInfo {
     if (ray_box(ray, bounding_box)) {
         // Check for triangle intersections
         for (var i = 0u; i < triangle_count; i = i + 1u) {
-            let triangle: array<vec3<f32>, 4> = array<vec3<f32>, 4>(
-                vec3<f32>(triangle_data[i * 12], triangle_data[i * 12 + 1], triangle_data[i * 12 + 2]),
-                vec3<f32>(triangle_data[i * 12 + 3], triangle_data[i * 12 + 4], triangle_data[i * 12 + 5]),
-                vec3<f32>(triangle_data[i * 12 + 6], triangle_data[i * 12 + 7], triangle_data[i * 12 + 8]),
-                vec3<f32>(triangle_data[i * 12 + 9], triangle_data[i * 12 + 10], triangle_data[i * 12 + 11])
+            let triangle: array<vec3<f32>, 3> = array<vec3<f32>, 3>(
+                vec3<f32>(triangle_data[i * 9], triangle_data[i * 9 + 1], triangle_data[i * 9 + 2]),
+                vec3<f32>(triangle_data[i * 9 + 3], triangle_data[i * 9 + 4], triangle_data[i * 9 + 5]),
+                vec3<f32>(triangle_data[i * 9 + 6], triangle_data[i * 9 + 7], triangle_data[i * 9 + 8]),
             );
             var hit_info: HitInfo = ray_triangle(ray, triangle);
 
@@ -183,7 +182,7 @@ fn ray_box(ray: Ray, bounding_box: array<f32, 6>) -> bool {
     return t_near <= t_far && t_far >= 0.0;
 }
 
-fn ray_triangle(ray: Ray, triangle: array<vec3<f32>, 4>) -> HitInfo {
+fn ray_triangle(ray: Ray, triangle: array<vec3<f32>, 3>) -> HitInfo {
     var hit_info: HitInfo;
     hit_info.did_hit = false;
 

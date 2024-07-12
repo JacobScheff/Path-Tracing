@@ -335,11 +335,11 @@ impl<'a> State<'a> {
 
         // Create a bounding box for the triangles
         let mut bounding_box: Vec<Vec<f32>> = vec![vec![f32::MAX; 3], vec![f32::MIN; 3]];
-        for i in 0..triangle_data.len() / 12 {
+        for i in 0..triangle_data.len() / 9 {
             for j in 0..3 {
                 for k in 0..3 {
-                    bounding_box[0][k] = bounding_box[0][k].min(triangle_data[i * 12 + j * 3 + k]);
-                    bounding_box[1][k] = bounding_box[1][k].max(triangle_data[i * 12 + j * 3 + k]);
+                    bounding_box[0][k] = bounding_box[0][k].min(triangle_data[i * 9 + j * 3 + k]);
+                    bounding_box[1][k] = bounding_box[1][k].max(triangle_data[i * 9 + j * 3 + k]);
                 }
             }
         }
