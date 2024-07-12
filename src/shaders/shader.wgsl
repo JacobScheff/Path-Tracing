@@ -22,6 +22,7 @@ struct Ray {
 
 const sphere_count: u32 = 5; // Number of spheres in the scene
 const nums_per_sphere: u32 = 12; // Number of values stored for every sphere
+const triangle_count: u32 = 3; // Number of triangles in the scene
 const max_bounce_count: u32 = 20; // Max bounces per ray
 const rays_per_pixel: u32 = 40; // Number of rays per pixel
 const screen_size: vec2<f32> = vec2<f32>(1200.0, 600.0); // Size of the screen
@@ -33,7 +34,7 @@ const aspect_ratio: f32 = screen_size.x / screen_size.y; // Aspect ratio of the 
 @group(0) @binding(2) var<storage, read_write> frame_data: array<array<vec3<f32>, u32(screen_size.x)>, u32(screen_size.y * 1.5)>;
 @group(0) @binding(3) var<storage, read> camera_position: vec3<f32>;
 @group(0) @binding(4) var<storage, read> camera_rotation: vec3<f32>;
-@group(0) @binding(5) var<storage, read> triangle_data: array<vec3<f32>, 3>;
+@group(0) @binding(5) var<storage, read> triangle_data: array<array<vec3<f32>, 3>, triangle_count>;
 
 // Environment lighting
 const sky_color_horizon: vec3<f32> = vec3<f32>(0.5, 0.7, 1.0);
@@ -132,7 +133,7 @@ fn calculate_ray_collision(ray: Ray) -> HitInfo {
     closest_hit.did_hit = false;
     closest_hit.distance = 1000000.0;
 
-    // Loop through each sphere in the storage buffer
+    // Check for sphere intersections
     for (var i = 0u; i < sphere_count; i = i + 1u) {
         var sphere_center: vec3<f32> = vec3<f32>(sphere_data[i][0], sphere_data[i][1], sphere_data[i][2]);
         var sphere_radius: f32 = sphere_data[i][3];
@@ -144,7 +145,49 @@ fn calculate_ray_collision(ray: Ray) -> HitInfo {
         }
     }
 
+    // Check for triangle intersections
+    for (var i = 0u; i < triangle_count; i = i + 1u) {
+        var hit_info: HitInfo = ray_triangle(ray, triangle_data[i]);
+
+        if hit_info.did_hit && hit_info.distance < closest_hit.distance {
+            closest_hit = hit_info;
+        }
+    }
+
     return closest_hit;
+}
+
+fn ray_triangle(ray: Ray, triangle: array<vec3<f32>, 3>) -> HitInfo {
+    var hit_info: HitInfo;
+    hit_info.did_hit = false;
+
+    var edge_ab: vec3<f32> = triangle[1] - triangle[0];
+    var edge_ac: vec3<f32> = triangle[2] - triangle[0];
+    var normal_vector: vec3<f32> = cross(edge_ab, edge_ac);
+    var ao: vec3<f32> = ray.origin - triangle[0];
+    var dao: vec3<f32> = cross(ao, ray.dir);
+
+    var determinant: f32 = -dot(ray.dir, normal_vector);
+    var inv_det: f32 = 1.0 / determinant;
+
+    // Calculate distance to triangle and barycentric coordinates of intersection point
+    var dst: f32 = dot(ao, normal_vector) * inv_det;
+    var u: f32 = dot(edge_ac, dao) * inv_det;
+    var v: f32 = -dot(edge_ab, dao) * inv_det;
+    var w: f32 = 1.0 - u - v;
+
+    if(determinant >= 0.000001 && dst >= 0 && u >= 0 && v >= 0 && w >= 0){
+        hit_info.did_hit = true;
+        hit_info.distance = dst;
+        hit_info.position = ray.origin + ray.dir * dst;
+        hit_info.normal = normalize(normal_vector); // TODO: Test using stl-given normals
+        hit_info.color = vec3<f32>(0.0, 0.0, 1.0);
+        hit_info.emission_color = vec3<f32>(0.0, 0.0, 0.0);
+        hit_info.emission_strength = 0.0;
+        hit_info.smoothness = 0.0;
+    }
+
+    return hit_info;
 }
 
 fn ray_sphere(ray: Ray, sphere: array<f32, nums_per_sphere>) -> HitInfo {

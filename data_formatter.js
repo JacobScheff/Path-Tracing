@@ -2,6 +2,7 @@ const input_path = "objects/knight.stl"
 const output_path = "objects/knight.bin"
 
 const fs = require('fs')
+const scale = 0.1
 
 // Read the input file
 console.log(`Reading input file: ${input_path}`)
@@ -9,7 +10,7 @@ const input = fs.readFileSync(input_path).toString()
 
 // Convert the input file to a 1d array of floats that store the vertices of the triangles
 console.log("Parisng data")
-const vertices = input.split("\n").filter(line => line.includes("vertex")).map(line => line.split("vertex ")[1].split(" ").map(Number)).flat()
+let vertices = input.split("\n").filter(line => line.includes("vertex")).map(line => line.split("vertex ")[1].split(" ").map(Number)).flat().map(n => n * scale)
 
 // Convert to binary
 console.log("Converting to binary")
