@@ -31,6 +31,7 @@ struct State<'a> {
     frame_data_buffer: wgpu::Buffer,
     sphere_buffer: wgpu::Buffer,
     triangle_buffer: wgpu::Buffer,
+    bounding_box_buffer: wgpu::Buffer,
     camera_position: [f32; 3],
     camera_rotation: [f32; 3],
     camera_position_buffer: wgpu::Buffer,
@@ -250,6 +251,16 @@ impl<'a> State<'a> {
                     },
                     count: None,
                 },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 6,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
             ],
             label: Some("Sphere Bind Group Layout"),
         });
@@ -273,18 +284,18 @@ impl<'a> State<'a> {
 
         // Create sphere data - Format: [x, y, z, radius, r, g, b, er, eg, eb, emission_strength, smoothness]
         let mut sphere_data: Vec<Vec<f32>> = Vec::new();
-        sphere_data.push(vec![
-            -40.0, 0.0, 0.0, 10.0, 0.25, 0.25, 1.0, 0.0, 0.0, 0.0, 0.0, 0.9,
-        ]);
-        sphere_data.push(vec![
-            40.0, 0.0, 0.0, 10.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-        ]);
-        sphere_data.push(vec![
-            0.0, -20.0, 0.0, 10.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-        ]);
-        sphere_data.push(vec![
-            0.0, -5030.0, 0.0, 5000.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-        ]);
+        // sphere_data.push(vec![
+        //     -40.0, 0.0, 0.0, 10.0, 0.25, 0.25, 1.0, 0.0, 0.0, 0.0, 0.0, 0.9,
+        // ]);
+        // sphere_data.push(vec![
+        //     40.0, 0.0, 0.0, 10.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+        // ]);
+        // sphere_data.push(vec![
+        //     0.0, -20.0, 0.0, 10.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        // ]);
+        // sphere_data.push(vec![
+        //     0.0, -5030.0, 0.0, 5000.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        // ]);
         sphere_data.push(vec![
             20.0, 40.0, -20.0, 10.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10.0, 0.0,
         ]); // Light source
@@ -310,13 +321,11 @@ impl<'a> State<'a> {
         let triangle_data = triangle_data.chunks(4).collect::<Vec<_>>();
         let triangle_data = triangle_data.iter().map(|d| f32::from_ne_bytes([d[0], d[1], d[2], d[3]])).collect::<Vec<_>>();
 
-        // Reshape triangle data into a 2D array
-        let triangle_data: Vec<Vec<f32>> = triangle_data.chunks(3).map(|c| c.to_vec()).collect();
+        // Reshape triangle data into a 3D array
+        let triangle_data: Vec<Vec<Vec<f32>>> = triangle_data.chunks(3).map(|c| c.chunks(3).map(|c| c.to_vec()).collect()).collect();
 
-        let triangle_data_u8: Vec<u8> = triangle_data
-            .iter()
-            .flat_map(|s| s.iter().map(|f| f.to_ne_bytes().to_vec()).flatten())
-            .collect();
+        // Convert triangle data to u8
+        let triangle_data_u8: Vec<u8> = triangle_data.iter().flatten().flatten().map(|f| f.to_ne_bytes().to_vec()).flatten().collect();
 
         // Buffer for triangle data
         let triangle_buffer = device.create_buffer_init(&BufferInitDescriptor {
@@ -327,6 +336,27 @@ impl<'a> State<'a> {
 
         // Write triangle data to buffer
         queue.write_buffer(&triangle_buffer, 0, bytemuck::cast_slice(&triangle_data_u8));
+
+        // Create a bounding box for the triangles
+        let mut bounding_box: Vec<Vec<f32>> = vec![vec![f32::MAX; 3], vec![f32::MIN; 3]];
+        for triangle in triangle_data.iter() {
+            for vertex in triangle.iter() {
+                for i in 0..3 {
+                    bounding_box[0][i] = bounding_box[0][i].min(vertex[i]);
+                    bounding_box[1][i] = bounding_box[1][i].max(vertex[i]);
+                }
+            }
+        }
+        
+        // Convert bounding box to u8
+        let bounding_box_u8: Vec<u8> = bounding_box.iter().flatten().map(|f| f.to_ne_bytes().to_vec()).flatten().collect();
+
+        // Buffer for the bounding box
+        let bounding_box_buffer = device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Bounding Box Buffer Data"),
+            contents: bytemuck::cast_slice(&bounding_box_u8),
+            usage: BufferUsages::STORAGE | BufferUsages::COPY_DST,
+        });
 
         // Buffer for the frame count
         let frame_count_buffer = device.create_buffer_init(&BufferInitDescriptor {
@@ -396,6 +426,7 @@ impl<'a> State<'a> {
             frame_data_buffer,
             sphere_buffer,
             triangle_buffer,
+            bounding_box_buffer,
             camera_position,
             camera_rotation,
             camera_position_buffer,
@@ -573,6 +604,16 @@ async fn run() {
                         },
                         count: None,
                     },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 6,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Storage { read_only: true },
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
                 ],
                 label: Some("Sphere Bind Group Layout"),
             });
@@ -603,6 +644,10 @@ async fn run() {
             wgpu::BindGroupEntry {
                 binding: 5,
                 resource: state.triangle_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 6,
+                resource: state.bounding_box_buffer.as_entire_binding(),
             },
         ],
     });
