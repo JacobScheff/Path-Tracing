@@ -17,7 +17,7 @@ const TIME_BETWEEN_FRAMES: u64 = 17;
 const CAMERA_SPEED: f32 = 1.0;
 const CAMERA_ROT_SPEED: f32 = 1.0;
 
-const meshes: [&str; 2] = ["../objects/knight.bin", "../objects/pawn.bin"];
+const meshes: [&str; 2] = ["../objects/knight.bin", "../objects/teapot.bin"];
 
 struct State<'a> {
     surface: wgpu::Surface<'a>,

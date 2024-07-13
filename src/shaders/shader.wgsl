@@ -22,7 +22,7 @@ struct Ray {
 
 const sphere_count: u32 = 1; // Number of spheres in the scene
 const nums_per_sphere: u32 = 12; // Number of values stored for every sphere
-const triangle_count: u32 = 44; // Number of triangles in the scene
+const triangle_count: u32 = 44 + 1256; // Number of triangles in the scene
 const max_bounce_count: u32 = 10; // Max bounces per ray
 const rays_per_pixel: u32 = 2; // Number of rays per pixel
 const screen_size: vec2<f32> = vec2<f32>(1200.0, 600.0); // Size of the screen
