@@ -1,4 +1,4 @@
-const input_path = "objects/knight.stl"
+const input_path = "objects/small_knight.stl"
 const output_path = "objects/knight.bin"
 
 const fs = require('fs')
