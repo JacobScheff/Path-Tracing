@@ -17,8 +17,6 @@ const TIME_BETWEEN_FRAMES: u64 = 17;
 const CAMERA_SPEED: f32 = 1.0;
 const CAMERA_ROT_SPEED: f32 = 1.0;
 
-const meshes: [&str; 2] = ["../objects/knight.bin", "../objects/teapot.bin"];
-
 struct State<'a> {
     surface: wgpu::Surface<'a>,
     device: wgpu::Device,
@@ -33,7 +31,6 @@ struct State<'a> {
     frame_data_buffer: wgpu::Buffer,
     sphere_buffer: wgpu::Buffer,
     triangle_buffer: wgpu::Buffer,
-    mesh_buffer: wgpu::Buffer,
     bounding_box_buffer: wgpu::Buffer,
     camera_position: [f32; 3],
     camera_rotation: [f32; 3],
