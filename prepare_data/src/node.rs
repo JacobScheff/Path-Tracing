@@ -10,14 +10,12 @@ pub struct Node {
 }
 
 impl Node {
-    pub fn new(bounds: BoundingBox) -> Node {
+    pub fn new(bounds: BoundingBox, triangles: Vec<Triangle>) -> Node {
         Node {
             bounds: bounds,
-            triangles: Vec::new(),
+            triangles: triangles,
             child_a: None,
             child_b: None,
         }
     }
-
-    
 }
