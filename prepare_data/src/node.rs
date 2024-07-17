@@ -3,10 +3,10 @@ use crate::triangle::Triangle;
 use crate::bounding_box::BoundingBox;
 
 pub struct Node {
-    bounds: BoundingBox,
-    triangles: Vec<Triangle>,
-    child_a: Option<Box<Node>>,
-    child_b: Option<Box<Node>>,
+    pub bounds: BoundingBox,
+    pub triangles: Vec<Triangle>,
+    pub child_a: Option<Box<Node>>,
+    pub child_b: Option<Box<Node>>,
 }
 
 impl Node {
