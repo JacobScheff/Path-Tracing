@@ -37,6 +37,7 @@ struct State<'a> {
     camera_position_buffer: wgpu::Buffer,
     camera_rotation_buffer: wgpu::Buffer,
     keys_pressed: [bool; 12], // [W, S, D, A, Space, Shift, I, K, L, J, O, U]
+    tick: u32,
 }
 
 impl<'a> State<'a> {
@@ -319,9 +320,16 @@ impl<'a> State<'a> {
         let triangle_data = include_bytes!("../objects/knight.bin");
         let triangle_data = triangle_data.to_vec();
         let triangle_data = triangle_data.chunks(4).collect::<Vec<_>>();
-        let triangle_data = triangle_data.iter().map(|d| f32::from_ne_bytes([d[0], d[1], d[2], d[3]])).collect::<Vec<_>>();
+        let triangle_data = triangle_data
+            .iter()
+            .map(|d| f32::from_ne_bytes([d[0], d[1], d[2], d[3]]))
+            .collect::<Vec<_>>();
 
-        let triangle_data_u8 = triangle_data.iter().map(|f| f.to_ne_bytes().to_vec()).flatten().collect::<Vec<_>>();
+        let triangle_data_u8 = triangle_data
+            .iter()
+            .map(|f| f.to_ne_bytes().to_vec())
+            .flatten()
+            .collect::<Vec<_>>();
 
         // Buffer for triangle data
         let triangle_buffer = device.create_buffer_init(&BufferInitDescriptor {
@@ -344,10 +352,21 @@ impl<'a> State<'a> {
             }
         }
 
-        let bounding_box: Vec<f32> = vec![bounding_box[0][0], bounding_box[0][1], bounding_box[0][2], bounding_box[1][0], bounding_box[1][1], bounding_box[1][2]];
-        
+        let bounding_box: Vec<f32> = vec![
+            bounding_box[0][0],
+            bounding_box[0][1],
+            bounding_box[0][2],
+            bounding_box[1][0],
+            bounding_box[1][1],
+            bounding_box[1][2],
+        ];
+
         // // Convert bounding box to u8
-        let bounding_box_u8: Vec<u8> = bounding_box.iter().map(|f| f.to_ne_bytes().to_vec()).flatten().collect();
+        let bounding_box_u8: Vec<u8> = bounding_box
+            .iter()
+            .map(|f| f.to_ne_bytes().to_vec())
+            .flatten()
+            .collect();
 
         // Buffer for the bounding box
         let bounding_box_buffer = device.create_buffer_init(&BufferInitDescriptor {
@@ -430,6 +449,7 @@ impl<'a> State<'a> {
             camera_position_buffer,
             camera_rotation_buffer,
             keys_pressed: [false; 12],
+            tick: 0,
         }
     }
 
@@ -443,6 +463,8 @@ impl<'a> State<'a> {
     }
 
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
+        let start_time = std::time::Instant::now();
+
         // Update the frame count buffer before rendering
         self.queue.write_buffer(
             &self.frame_count_buffer,
@@ -507,6 +529,16 @@ impl<'a> State<'a> {
         drawable.present();
 
         self.frame_count += 1;
+
+        if self.tick % 10 == 0 {
+            let elapsed_time = start_time.elapsed();
+            println!(
+                "fps: {}",
+                1.0 / elapsed_time.as_micros() as f32 * 1000.0 * 1000.0
+            );
+        }
+
+        self.tick += 1;
 
         Ok(())
     }
