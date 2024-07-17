@@ -8,7 +8,9 @@ pub struct BoundingBox {
 }
 
 impl BoundingBox {
-    pub fn new(min: Vector, max: Vector) -> BoundingBox {
+    pub fn new() -> BoundingBox {
+        let min = Vector::new(std::f32::INFINITY, std::f32::INFINITY, std::f32::INFINITY);
+        let max = Vector::new(-std::f32::INFINITY, -std::f32::INFINITY, -std::f32::INFINITY);
         BoundingBox {
             min: min,
             max: max,
@@ -16,13 +18,13 @@ impl BoundingBox {
         }
     }
 
-    pub fn grow_to_include_vector(&mut self, point: &Vector) {
-        self.min = self.min.min(&point);
-        self.max = self.max.max(&point);
+    pub fn grow_to_include_vector(&mut self, point: Vector) {
+        self.min = self.min.min(point);
+        self.max = self.max.max(point);
         self.center = (self.min + self.max) / 2.0;
     }
 
-    pub fn grow_to_include(&mut self, triangle: &Triangle) {
+    pub fn grow_to_include(&mut self, triangle: Triangle) {
         self.grow_to_include_vector(triangle.get_a());
         self.grow_to_include_vector(triangle.get_b());
         self.grow_to_include_vector(triangle.get_c());

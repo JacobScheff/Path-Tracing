@@ -15,16 +15,16 @@ impl Triangle {
         }
     }
 
-    pub fn get_a(&self) -> &Vector {
-        &self.a
+    pub fn get_a(&self) -> Vector {
+        self.a
     }
 
-    pub fn get_b(&self) -> &Vector {
-        &self.b
+    pub fn get_b(&self) -> Vector {
+        self.b
     }
 
-    pub fn get_c(&self) -> &Vector {
-        &self.c
+    pub fn get_c(&self) -> Vector {
+        self.c
     }
 
     pub fn set_a(&mut self, a: Vector) {

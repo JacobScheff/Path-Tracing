@@ -167,7 +167,7 @@ impl Vector {
         self.rotate_z(angles.z).rotate_y(angles.y).rotate_x(angles.x)
     }
 
-    pub fn min(&self, other: &Vector) -> Vector {
+    pub fn min(&self, other: Vector) -> Vector {
         Vector {
             x: self.x.min(other.x),
             y: self.y.min(other.y),
@@ -175,7 +175,7 @@ impl Vector {
         }
     }
 
-    pub fn max(&self, other: &Vector) -> Vector {
+    pub fn max(&self, other: Vector) -> Vector {
         Vector {
             x: self.x.max(other.x),
             y: self.y.max(other.y),
