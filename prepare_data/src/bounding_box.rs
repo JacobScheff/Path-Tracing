@@ -1,10 +1,11 @@
 use crate::vector::Vector;
 use crate::triangle::Triangle;
 
+#[derive(Clone, Copy)]
 pub struct BoundingBox {
-    min: Vector,
-    max: Vector,
-    center: Vector,
+    pub min: Vector,
+    pub max: Vector,
+    pub center: Vector,
 }
 
 impl BoundingBox {

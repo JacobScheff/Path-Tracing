@@ -1,10 +1,11 @@
 use crate::vector::Vector;
 
+#[derive(Clone, Copy)]
 pub struct Triangle {
     a: Vector,
     b: Vector,
     c: Vector,
-    center: Vector,
+    pub center: Vector,
 }
 
 impl Triangle {

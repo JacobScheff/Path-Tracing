@@ -10,50 +10,46 @@ use node::Node;
 const max_depth: i32 = 4;
 
 fn BVH(vertices: Vec<Vector>, triangle_indices: Vec<i32>) {
-    // Create bounding box
-    let mut bounds: BoundingBox = BoundingBox::new();
+    // // Create bounding box
+    // let mut bounds: BoundingBox = BoundingBox::new();
 
-    for i in 0..vertices.len() {
-        bounds.grow_to_include_vector(vertices[i]);
-    }
+    // for i in 0..vertices.len() {
+    //     bounds.grow_to_include_vector(vertices[i]);
+    // }
 
-    // Create triangles
-    let mut triangles: Vec<Triangle> = Vec::new();
-    for i in 0..triangle_indices.len() {
-        let a = vertices[triangle_indices[i] as usize];
-        let b = vertices[triangle_indices[i + 1] as usize];
-        let c = vertices[triangle_indices[i + 2] as usize];
-        let triangle = Triangle::new(a, b, c);
-        triangles.push(triangle);
-    }
+    // // Create triangles
+    // let mut triangles: Vec<Triangle> = Vec::new();
+    // for i in 0..triangle_indices.len() {
+    //     let a = vertices[triangle_indices[i] as usize];
+    //     let b = vertices[triangle_indices[i + 1] as usize];
+    //     let c = vertices[triangle_indices[i + 2] as usize];
+    //     let triangle = Triangle::new(a, b, c);
+    //     triangles.push(triangle);
+    // }
 
-    // Create root noode (represents entire, un-split mesh), and split it
-    let mut root: Node = Node::new(bounds, triangles);
-    split(&mut root, 0);
+    // // Create root noode (represents entire, un-split mesh), and split it
+    // let mut root: Node = Node::new(bounds, triangles);
+    // split(&mut root, 0);
 }
 
-fn split(parent: &mut Node, depth: i32) {
+// https://stackoverflow.com/questions/42264041/how-do-i-get-an-owned-value-out-of-a-box
+fn unbox<T>(value: Box<T>) -> T {
+    *value
+}
+
+fn split(parent: &mut Node, depth: i32, all_nodes: &mut Vec<Node>, all_triangles: &Vec<Triangle>) {
     if depth == max_depth {
         return;
     }
 
-    parent.child_a = Some(Box::new(Node::new(BoundingBox::new(), Vec::new())));
-    parent.child_b = Some(Box::new(Node::new(BoundingBox::new(), Vec::new())));
-
-    for i in 0..parent.triangles.len() {
-        let tri: Triangle = parent.triangles[i];
-        let in_a: bool = tri.center.x < parent.bounds.center.x;
-        let child: Node = if in_a { parent.child_a } else { parent.child_b };
-        child.triangles.push(tri);
-        child.bounds.grow_to_include(tri);
-    }
-
-    split(parent.child_a, depth + 1);
-    split(parent.child_b, depth + 1);
+    
 }
 
 fn main() {
     println!("Hello, world!");
+    let mut all_nodes: Vec<Node> = Vec::new();
+    let mut all_triangles: Vec<Triangle> = Vec::new();
+
     // // Load triangle data
     // println!("Loading data...");
     // let triangle_data = include_bytes!("../../objects/knight.bin");
