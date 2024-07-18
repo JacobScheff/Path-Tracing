@@ -11,10 +11,10 @@ pub struct Node {
 }
 
 impl Node {
-    pub fn new(bounds: BoundingBox) -> Node {
+    pub fn new(bounds: BoundingBox, triangle_index: i32) -> Node {
         Node {
             bounds: bounds,
-            triangle_index: -1,
+            triangle_index,
             triangle_count: 0,
             child_index: 0,
         }
