@@ -32,11 +32,6 @@ fn BVH(vertices: Vec<Vector>, triangle_indices: Vec<i32>) {
     // split(&mut root, 0);
 }
 
-// https://stackoverflow.com/questions/42264041/how-do-i-get-an-owned-value-out-of-a-box
-fn unbox<T>(value: Box<T>) -> T {
-    *value
-}
-
 fn split(parent: &mut Node, depth: i32, all_nodes: &mut Vec<Node>, all_triangles: &mut Vec<Triangle>) {
     if depth == max_depth {
         return;
