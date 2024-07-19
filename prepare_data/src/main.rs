@@ -7,9 +7,7 @@ use bounding_box::BoundingBox;
 mod node;
 use node::Node;
 
-const max_depth: i32 = 2;
-
-fn BVH(all_nodes: &mut Vec<Node>, all_triangles: &mut Vec<Triangle>) {
+fn BVH(all_nodes: &mut Vec<Node>, all_triangles: &mut Vec<Triangle>, max_depth: i32) {
     // Create bounding box
     let mut bounds: BoundingBox = BoundingBox::new();
 
@@ -19,10 +17,10 @@ fn BVH(all_nodes: &mut Vec<Node>, all_triangles: &mut Vec<Triangle>) {
 
     // Create root noode (represents entire, un-split mesh), and split it
     let mut root: Node = Node::new(bounds, 0, all_triangles.len() as i32);
-    split(&mut root, 0, all_nodes, all_triangles);
+    split(&mut root, 0, all_nodes, all_triangles, max_depth);
 }
 
-fn split(parent: &mut Node, depth: i32, all_nodes: &mut Vec<Node>, all_triangles: &mut Vec<Triangle>) {
+fn split(parent: &mut Node, depth: i32, all_nodes: &mut Vec<Node>, all_triangles: &mut Vec<Triangle>, max_depth: i32) {
     if depth == max_depth {
         return;
     }
@@ -76,8 +74,8 @@ fn split(parent: &mut Node, depth: i32, all_nodes: &mut Vec<Node>, all_triangles
         }
     }
 
-    split(&mut child_a, depth + 1, all_nodes, all_triangles);
-    split(&mut child_b, depth + 1, all_nodes, all_triangles);
+    split(&mut child_a, depth + 1, all_nodes, all_triangles, max_depth);
+    split(&mut child_b, depth + 1, all_nodes, all_triangles, max_depth);
 }
 
 fn main() {
@@ -96,6 +94,7 @@ fn main() {
         .collect::<Vec<_>>();
     
     // Convert to vertices
+    println!("Forming data...");
     let mut vertices: Vec<Vector> = Vec::new();
     let mut all_triangles: Vec<Triangle> = Vec::new();
     for i in 0..triangle_data.len() / 3 {
@@ -108,5 +107,8 @@ fn main() {
     }
 
     // Build BVH
-    BVH(&mut all_nodes, &mut all_triangles);
+    println!("Building BVH...");
+    BVH(&mut all_nodes, &mut all_triangles, 2);
+
+    println!("Done!");
 }
