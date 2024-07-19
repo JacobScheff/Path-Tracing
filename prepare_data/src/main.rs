@@ -107,7 +107,11 @@ fn main() {
 
     // Build BVH
     println!("Building BVH...");
-    BVH(&mut all_nodes, &mut all_triangles, 4);
+    BVH(&mut all_nodes, &mut all_triangles, 1);
+
+    for i in 0..all_nodes.len() {
+        println!("Node {}: min: {:?}, max: {:?}", i, all_nodes[i].bounds.min, all_nodes[i].bounds.max);
+    }
 
     println!("Done!");
 }
