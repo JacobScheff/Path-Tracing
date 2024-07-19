@@ -137,6 +137,10 @@ fn main() {
     let data = data.iter().map(|d| d.to_ne_bytes()).flatten().collect::<Vec<_>>();
     std::fs::write("../objects/knight_bvh.bin", data).unwrap();
 
+    for i in 0..all_nodes.len() {
+        println!("Node {}, triangle index: {:?}, triangle count: {:?}", i, all_nodes[i].triangle_index, all_nodes[i].triangle_count);
+    }
+
     println!("Done!");
     println!("Number of nodes: {}", all_nodes.len());
     println!("Max depth: {}", max_depth);
