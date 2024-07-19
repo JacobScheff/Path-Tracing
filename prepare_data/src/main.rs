@@ -71,6 +71,8 @@ fn split(parent: &mut Node, depth: i32, all_nodes: &mut Vec<Node>, all_triangles
             let temp: Triangle = all_triangles[i as usize];
             all_triangles[i as usize] = all_triangles[swap as usize];
             all_triangles[swap as usize] = temp;
+
+            child_b.triangle_index += 1;
         }
     }
 
@@ -110,7 +112,7 @@ fn main() {
     BVH(&mut all_nodes, &mut all_triangles, 2);
 
     for i in 0..all_nodes.len() {
-        println!("{:?}", all_nodes[i].triangle_count);
+        println!("{:?}", all_nodes[i].triangle_index);
     }
 
     println!("Done!");
