@@ -197,7 +197,8 @@ fn ray_triangle_bvh(ray: Ray) -> HitInfo {
                 // Push children onto stack to be tested
                 node_stack[stack_index] = array<f32, 9>(bvh_data[u32((node[8] + 1) * 9)], bvh_data[u32((node[8] + 1) * 9 + 1)], bvh_data[u32((node[8] + 1) * 9 + 2)], bvh_data[u32((node[8] + 1) * 9 + 3)], bvh_data[u32((node[8] + 1) * 9 + 4)], bvh_data[u32((node[8] + 1) * 9 + 5)], bvh_data[u32((node[8] + 1) * 9 + 6)], bvh_data[u32((node[8] + 1) * 9 + 7)], bvh_data[u32((node[8] + 1) * 9 + 8)]);
                 stack_index++;
-                node_stack[stack_index] = array<f32, 9>(bvh_data[u32(node[8] * 9 + 9)], bvh_data[u32(node[8] * 9 + 10)], bvh_data[u32(node[8] * 9 + 11)], bvh_data[u32(node[8] * 9 + 12)], bvh_data[u32(node[8] * 9 + 13)], bvh_data[u32(node[8] * 9 + 14)], bvh_data[u32(node[8] * 9 + 15)], bvh_data[u32(node[8] * 9 + 16)], bvh_data[u32(node[8] * 9 + 17)]);
+                node_stack[stack_index] = array<f32, 9>(bvh_data[u32(node[8] * 9)], bvh_data[u32(node[8] * 9 + 1)], bvh_data[u32(node[8] * 9 + 2)], bvh_data[u32(node[8] * 9 + 3)], bvh_data[u32(node[8] * 9 + 4)], bvh_data[u32(node[8] * 9 + 5)], bvh_data[u32(node[8] * 9 + 6)], bvh_data[u32(node[8] * 9 + 7)], bvh_data[u32(node[8] * 9 + 8)]);
+                stack_index++;
             }
         }
     }
