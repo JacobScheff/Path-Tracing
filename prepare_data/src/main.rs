@@ -58,7 +58,10 @@ fn split(parent: &mut Node, depth: i32, all_nodes: &mut Vec<Node>, all_triangles
         }
 
         // Set the child index of the parent node
-        all_nodes[parent_index as usize].child_index = all_nodes.len() as i32;
+        if all_nodes[parent_index as usize].child_index == 0 {
+            all_nodes[parent_index as usize].child_index = all_nodes.len() as i32;
+        }
+        // all_nodes[parent_index as usize].child_index = all_nodes.len() as i32;
     }
     
     let mut child_a: Node = Node::new(BoundingBox::new(), parent.triangle_index, 0);
@@ -81,9 +84,10 @@ fn split(parent: &mut Node, depth: i32, all_nodes: &mut Vec<Node>, all_triangles
             // Ensure that the triangles of each child node are grouped together.
             // This allows the node to 'store' the triangles with an index and count.
             let swap: i32 = child_a.triangle_index + child_a.triangle_count - 1;
-            let temp: Triangle = all_triangles[i as usize];
-            all_triangles[i as usize] = all_triangles[swap as usize];
-            all_triangles[swap as usize] = temp;
+            // let temp: Triangle = all_triangles[i as usize];
+            // all_triangles[i as usize] = all_triangles[swap as usize];
+            // all_triangles[swap as usize] = temp;
+            all_triangles.swap(i as usize, swap as usize);
 
             child_b.triangle_index += 1;
         } else {
@@ -146,10 +150,25 @@ fn main() {
         data.push(all_nodes[i].child_index as f32);
     }
 
+    let mut triangle_data: Vec<f32> = Vec::new();
+    for i in 0..all_triangles.len() {
+        triangle_data.push(all_triangles[i].get_a().x);
+        triangle_data.push(all_triangles[i].get_a().y);
+        triangle_data.push(all_triangles[i].get_a().z);
+        triangle_data.push(all_triangles[i].get_b().x);
+        triangle_data.push(all_triangles[i].get_b().y);
+        triangle_data.push(all_triangles[i].get_b().z);
+        triangle_data.push(all_triangles[i].get_c().x);
+        triangle_data.push(all_triangles[i].get_c().y);
+        triangle_data.push(all_triangles[i].get_c().z);
+    }
+
     // Write data
     println!("Writing data...");
     let data = data.iter().map(|d| d.to_ne_bytes()).flatten().collect::<Vec<_>>();
     std::fs::write("../objects/knight_bvh.bin", data).unwrap();
+    let triangle_data = triangle_data.iter().map(|d| d.to_ne_bytes()).flatten().collect::<Vec<_>>();
+    std::fs::write("../objects/knight.bin", triangle_data).unwrap();
 
     for i in 0..all_nodes.len() {
         println!("Node {}\ttriangle index: {:?}\ttriangle count: {:?}\t child index:{:?}", i, all_nodes[i].triangle_index, all_nodes[i].triangle_count, all_nodes[i].child_index);
