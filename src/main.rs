@@ -31,7 +31,7 @@ struct State<'a> {
     frame_data_buffer: wgpu::Buffer,
     sphere_buffer: wgpu::Buffer,
     triangle_buffer: wgpu::Buffer,
-    bounding_box_buffer: wgpu::Buffer,
+    bvh_buffer: wgpu::Buffer,
     camera_position: [f32; 3],
     camera_rotation: [f32; 3],
     camera_position_buffer: wgpu::Buffer,
@@ -342,36 +342,25 @@ impl<'a> State<'a> {
         queue.write_buffer(&triangle_buffer, 0, bytemuck::cast_slice(&triangle_data_u8));
 
         // Create a bounding box for the triangles
-        let mut bounding_box: Vec<Vec<f32>> = vec![vec![f32::MAX; 3], vec![f32::MIN; 3]];
-        for i in 0..triangle_data.len() / 9 {
-            for j in 0..3 {
-                for k in 0..3 {
-                    bounding_box[0][k] = bounding_box[0][k].min(triangle_data[i * 9 + j * 3 + k]);
-                    bounding_box[1][k] = bounding_box[1][k].max(triangle_data[i * 9 + j * 3 + k]);
-                }
-            }
-        }
+        let bvh_data = include_bytes!("../objects/knight_bvh.bin");
+        let bvh_data = bvh_data.to_vec();
+        let bvh_data = bvh_data.chunks(4).collect::<Vec<_>>();
+        let bvh_data = bvh_data
+            .iter()
+            .map(|d| f32::from_ne_bytes([d[0], d[1], d[2], d[3]]))
+            .collect::<Vec<_>>();
 
-        let bounding_box: Vec<f32> = vec![
-            bounding_box[0][0],
-            bounding_box[0][1],
-            bounding_box[0][2],
-            bounding_box[1][0],
-            bounding_box[1][1],
-            bounding_box[1][2],
-        ];
-
-        // // Convert bounding box to u8
-        let bounding_box_u8: Vec<u8> = bounding_box
+        // Convert bvh data to u8
+        let bvh_data_u8 = bvh_data
             .iter()
             .map(|f| f.to_ne_bytes().to_vec())
             .flatten()
-            .collect();
+            .collect::<Vec<_>>();
 
         // Buffer for the bounding box
-        let bounding_box_buffer = device.create_buffer_init(&BufferInitDescriptor {
+        let bvh_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("Bounding Box Buffer Data"),
-            contents: bytemuck::cast_slice(&bounding_box_u8),
+            contents: bytemuck::cast_slice(&bvh_data_u8),
             usage: BufferUsages::STORAGE | BufferUsages::COPY_DST,
         });
 
@@ -443,7 +432,7 @@ impl<'a> State<'a> {
             frame_data_buffer,
             sphere_buffer,
             triangle_buffer,
-            bounding_box_buffer,
+            bvh_buffer,
             camera_position,
             camera_rotation,
             camera_position_buffer,
@@ -677,7 +666,7 @@ async fn run() {
             },
             wgpu::BindGroupEntry {
                 binding: 6,
-                resource: state.bounding_box_buffer.as_entire_binding(),
+                resource: state.bvh_buffer.as_entire_binding(),
             },
         ],
     });

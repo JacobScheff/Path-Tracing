@@ -134,7 +134,8 @@ fn main() {
     // Write data
     println!("Writing data...");
     let data = data.iter().map(|d| d.to_ne_bytes()).flatten().collect::<Vec<_>>();
-    std::fs::write("knight_bvh.bin", data).unwrap();
+    std::fs::write("../objects/knight_bvh.bin", data).unwrap();
 
     println!("Done!");
+    println!("Number of nodes: {}", all_nodes.len());
 }

@@ -23,6 +23,7 @@ struct Ray {
 const sphere_count: u32 = 1; // Number of spheres in the scene
 const nums_per_sphere: u32 = 12; // Number of values stored for every sphere
 const triangle_count: u32 = 456; // Number of triangles in the scene
+const bvh_node_count: u32 = 510; // Number of nodes in the BVH
 const max_bounce_count: u32 = 10; // Max bounces per ray
 const rays_per_pixel: u32 = 2; // Number of rays per pixel
 const screen_size: vec2<f32> = vec2<f32>(1200.0, 600.0); // Size of the screen
@@ -35,7 +36,7 @@ const aspect_ratio: f32 = screen_size.x / screen_size.y; // Aspect ratio of the 
 @group(0) @binding(3) var<storage, read> camera_position: vec3<f32>;
 @group(0) @binding(4) var<storage, read> camera_rotation: vec3<f32>;
 @group(0) @binding(5) var<storage, read> triangle_data: array<f32, u32(i32(triangle_count) * 3 * 3)>;
-@group(0) @binding(6) var<storage, read> bounding_box: array<f32, 6>;
+@group(0) @binding(6) var<storage, read> bvh: array<f32, u32(9 * bvh_node_count)>;
 
 // Environment lighting
 const sky_color_horizon: vec3<f32> = vec3<f32>(0.5, 0.7, 1.0);
@@ -146,9 +147,6 @@ fn calculate_ray_collision(ray: Ray) -> HitInfo {
         }
     }
 
-    // Check if ray intersects bounding box
-    if (ray_box(ray, bounding_box)) {
-        // Check for triangle intersections
         for (var i = 0u; i < triangle_count; i = i + 1u) {
             let triangle: array<vec3<f32>, 3> = array<vec3<f32>, 3>(
                 vec3<f32>(triangle_data[i * 9], triangle_data[i * 9 + 1], triangle_data[i * 9 + 2]),
@@ -161,7 +159,6 @@ fn calculate_ray_collision(ray: Ray) -> HitInfo {
                 closest_hit = hit_info;
             }
         }
-    }
 
     return closest_hit;
 }
