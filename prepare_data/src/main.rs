@@ -43,12 +43,12 @@ fn split(parent: &mut Node, depth: i32, all_nodes: &mut Vec<Node>, all_triangles
         split_pos = parent.bounds.center.z;
     }
 
+    // println!("Size at depth {} is {:?}", depth, size);
+
     // Create child nodes
     parent.child_index = all_nodes.len() as i32;
     let mut child_a: Node = Node::new(BoundingBox::new(), parent.triangle_index, 0);
     let mut child_b: Node = Node::new(BoundingBox::new(), parent.triangle_index, 0);
-    all_nodes.push(child_a);
-    all_nodes.push(child_b);
 
     for i in parent.triangle_index..parent.triangle_index + parent.triangle_count {
         let mut is_side_a: bool = false;
@@ -60,21 +60,26 @@ fn split(parent: &mut Node, depth: i32, all_nodes: &mut Vec<Node>, all_triangles
             is_side_a = all_triangles[i as usize].center.z < split_pos;
         }
 
-        let mut child: Node = if is_side_a { child_a } else { child_b };
-        child.bounds.grow_to_include(all_triangles[i as usize]);
-        child.triangle_count += 1;
-
         if is_side_a {
+            child_a.bounds.grow_to_include(all_triangles[i as usize]);
+            child_a.triangle_count += 1;
+
             // Ensure that the triangles of each child node are grouped together.
             // This allows the node to 'store' the triangles with an index and count.
-            let swap: i32 = child.triangle_index + child.triangle_count - 1;
+            let swap: i32 = child_a.triangle_index + child_a.triangle_count - 1;
             let temp: Triangle = all_triangles[i as usize];
             all_triangles[i as usize] = all_triangles[swap as usize];
             all_triangles[swap as usize] = temp;
 
             child_b.triangle_index += 1;
+        } else {
+            child_b.bounds.grow_to_include(all_triangles[i as usize]);
+            child_b.triangle_count += 1;
         }
     }
+
+    all_nodes.push(child_a);
+    all_nodes.push(child_b);
 
     split(&mut child_a, depth + 1, all_nodes, all_triangles, max_depth);
     split(&mut child_b, depth + 1, all_nodes, all_triangles, max_depth);
@@ -112,7 +117,7 @@ fn main() {
     BVH(&mut all_nodes, &mut all_triangles, 2);
 
     for i in 0..all_nodes.len() {
-        println!("{:?}", all_nodes[i].triangle_index);
+        println!("{:?}\t{:?}", all_nodes[i].triangle_index, all_nodes[i].triangle_count);
     }
 
     println!("Done!");
