@@ -17,6 +17,7 @@ fn BVH(all_nodes: &mut Vec<Node>, all_triangles: &mut Vec<Triangle>, max_depth: 
 
     // Create root noode (represents entire, un-split mesh), and split it
     let mut root: Node = Node::new(bounds, 0, all_triangles.len() as i32);
+    all_nodes.push(root);
     split(&mut root, 0, all_nodes, all_triangles, max_depth);
 }
 
@@ -78,7 +79,7 @@ fn split(parent: &mut Node, depth: i32, all_nodes: &mut Vec<Node>, all_triangles
         }
 
         if is_side_a {
-            child_a.bounds.grow_to_include(all_triangles[i as usize]);
+            child_a.bounds.grow_to_include(all_triangles[i as usize].clone());
             child_a.triangle_count += 1;
 
             // Ensure that the triangles of each child node are grouped together.
@@ -171,7 +172,7 @@ fn main() {
     std::fs::write("../objects/knight.bin", triangle_data).unwrap();
 
     for i in 0..all_nodes.len() {
-        println!("Node {}\ttriangle index: {:?}\ttriangle count: {:?}\t child index:{:?}", i, all_nodes[i].triangle_index, all_nodes[i].triangle_count, all_nodes[i].child_index);
+        println!("Node {}\ttriangle index: {:?}\ttriangle count: {:?}\t child index: {:?} \tbounds: ({:?}, {:?}, {:?}), ({:?}, {:?}, {:?})", i, all_nodes[i].triangle_index, all_nodes[i].triangle_count, all_nodes[i].child_index, all_nodes[i].bounds.min.x, all_nodes[i].bounds.min.y, all_nodes[i].bounds.min.z, all_nodes[i].bounds.max.x, all_nodes[i].bounds.max.y, all_nodes[i].bounds.max.z);
     }
 
     println!("Done!");
