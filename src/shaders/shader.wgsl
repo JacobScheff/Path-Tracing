@@ -171,7 +171,7 @@ fn ray_triangle_bvh(ray: Ray) -> HitInfo {
         stack_index--;
         let node = node_stack[stack_index];
 
-        if(ray_box(ray, array<f32, 6>(node[0], node[1], node[2], node[3], node[4], node[5]))){
+        if(ray_box(ray, array<f32, 6>(node[0], node[1], node[2], node[3], node[4], node[5])) < result.distance){
             if(node[8] == 0) {
                 // Leaf node (no children, so test triangles)
                 for(var i: u32 = u32(node[6]); i < u32(node[6] + node[7]); i++){
@@ -197,7 +197,7 @@ fn ray_triangle_bvh(ray: Ray) -> HitInfo {
     return result;
 }
 
-fn ray_box(ray: Ray, bounding_box: array<f32, 6>) -> bool {
+fn ray_box(ray: Ray, bounding_box: array<f32, 6>) -> f32 {
     let min_bound: vec3<f32> = vec3<f32>(bounding_box[0], bounding_box[1], bounding_box[2]);  
     let max_bound: vec3<f32> = vec3<f32>(bounding_box[3], bounding_box[4], bounding_box[5]);
 
@@ -210,7 +210,12 @@ fn ray_box(ray: Ray, bounding_box: array<f32, 6>) -> bool {
     let t_near = max(max(t1.x, t1.y), t1.z);
     let t_far = min(min(t2.x, t2.y), t2.z);
 
-    return t_near <= t_far && t_far >= 0.0;
+    let did_hit: bool = t_near <= t_far && t_far >= 0.0;
+    if did_hit {
+        return t_near;
+    } else {
+        return 999999999.0;
+    }
 }
 
 fn ray_triangle(ray: Ray, triangle: array<vec3<f32>, 3>) -> HitInfo {
