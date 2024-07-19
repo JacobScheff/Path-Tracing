@@ -36,7 +36,7 @@ const aspect_ratio: f32 = screen_size.x / screen_size.y; // Aspect ratio of the 
 @group(0) @binding(3) var<storage, read> camera_position: vec3<f32>;
 @group(0) @binding(4) var<storage, read> camera_rotation: vec3<f32>;
 @group(0) @binding(5) var<storage, read> triangle_data: array<f32, u32(i32(triangle_count) * 3 * 3)>;
-@group(0) @binding(6) var<storage, read> bvh: array<f32, u32(9 * bvh_node_count)>;
+@group(0) @binding(6) var<storage, read> bvh_data: array<f32, u32(9 * bvh_node_count)>;
 
 // Environment lighting
 const sky_color_horizon: vec3<f32> = vec3<f32>(0.5, 0.7, 1.0);
@@ -161,6 +161,45 @@ fn calculate_ray_collision(ray: Ray) -> HitInfo {
         }
 
     return closest_hit;
+}
+
+fn ray_triangle_bvh(ray: Ray) -> HitInfo {
+    var node_stack: array<array<f32, 9>, 10> = array<array<f32, 9>, 10>();
+    var stack_index: u32 = 0u;
+    node_stack[stack_index] = array<f32, 9>(bvh_data[0], bvh_data[1], bvh_data[2], bvh_data[3], bvh_data[4], bvh_data[5], bvh_data[6], bvh_data[7], bvh_data[8]);
+    stack_index++;
+
+    var result: HitInfo;
+    result.did_hit = false;
+    result.distance = 1000000.0;    
+
+    while(stack_index > 0){
+        let node = node_stack[stack_index];
+        stack_index--;
+
+        if(ray_box(ray, array<f32, 6>(node[0], node[1], node[2], node[3], node[4], node[5]))){
+            if(node[8] == 0) {
+                // Leaf node (no children, so test triangles)
+                for(var i: u32 = u32(node[6]); i < u32(node[6] + node[8]); i++){
+                    let triangle_hit_info = ray_triangle(ray, array<vec3<f32>, 3>(
+                        vec3<f32>(triangle_data[i * 9], triangle_data[i * 9 + 1], triangle_data[i * 9 + 2]),
+                        vec3<f32>(triangle_data[i * 9 + 3], triangle_data[i * 9 + 4], triangle_data[i * 9 + 5]),
+                        vec3<f32>(triangle_data[i * 9 + 6], triangle_data[i * 9 + 7], triangle_data[i * 9 + 8])
+                    ));
+                    if (triangle_hit_info.did_hit && triangle_hit_info.distance < result.distance) {
+                        result = triangle_hit_info;
+                    }
+                }
+            } else {
+                // Push children onto stack to be tested
+                node_stack[stack_index] = array<f32, 9>(bvh_data[u32((node[8] + 1) * 9)], bvh_data[u32((node[8] + 1) * 9 + 1)], bvh_data[u32((node[8] + 1) * 9 + 2)], bvh_data[u32((node[8] + 1) * 9 + 3)], bvh_data[u32((node[8] + 1) * 9 + 4)], bvh_data[u32((node[8] + 1) * 9 + 5)], bvh_data[u32((node[8] + 1) * 9 + 6)], bvh_data[u32((node[8] + 1) * 9 + 7)], bvh_data[u32((node[8] + 1) * 9 + 8)]);
+                stack_index++;
+                node_stack[stack_index] = array<f32, 9>(bvh_data[u32(node[8] * 9 + 9)], bvh_data[u32(node[8] * 9 + 10)], bvh_data[u32(node[8] * 9 + 11)], bvh_data[u32(node[8] * 9 + 12)], bvh_data[u32(node[8] * 9 + 13)], bvh_data[u32(node[8] * 9 + 14)], bvh_data[u32(node[8] * 9 + 15)], bvh_data[u32(node[8] * 9 + 16)], bvh_data[u32(node[8] * 9 + 17)]);
+            }
+        }
+    }
+
+    return result;
 }
 
 fn ray_box(ray: Ray, bounding_box: array<f32, 6>) -> bool {

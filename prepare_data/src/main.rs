@@ -78,6 +78,8 @@ fn split(parent: &mut Node, depth: i32, all_nodes: &mut Vec<Node>, all_triangles
         }
     }
 
+    parent.child_index = all_nodes.len() as i32;
+
     all_nodes.push(child_a);
     all_nodes.push(child_b);
 

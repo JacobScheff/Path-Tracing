@@ -350,6 +350,8 @@ impl<'a> State<'a> {
             .map(|d| f32::from_ne_bytes([d[0], d[1], d[2], d[3]]))
             .collect::<Vec<_>>();
 
+        println!("{:?}", bvh_data);
+
         // Convert bvh data to u8
         let bvh_data_u8 = bvh_data
             .iter()
