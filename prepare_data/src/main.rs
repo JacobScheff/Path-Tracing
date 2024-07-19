@@ -148,7 +148,7 @@ fn main() {
 
     // Build BVH
     println!("Building BVH...");
-    let max_depth: i32 = 12;
+    let max_depth: i32 = 20;
     BVH(&mut all_nodes, &mut all_triangles, max_depth);
 
     // Format data for writing: min, max, triangle_index, triangle_count, child_index
