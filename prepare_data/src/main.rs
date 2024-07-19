@@ -100,7 +100,7 @@ fn main() {
         .collect::<Vec<_>>();
     
     // Convert to vertices
-    println!("Forming data...");
+    println!("Forming data for build...");
     let mut vertices: Vec<Vector> = Vec::new();
     let mut all_triangles: Vec<Triangle> = Vec::new();
     for i in 0..triangle_data.len() / 3 {
@@ -114,11 +114,27 @@ fn main() {
 
     // Build BVH
     println!("Building BVH...");
-    BVH(&mut all_nodes, &mut all_triangles, 2);
+    BVH(&mut all_nodes, &mut all_triangles, 8);
 
+    // Format data for writing: min, max, triangle_index, triangle_count, child_index
+    println!("Formatting data for write...");
+    let mut data: Vec<f32> = Vec::new();
     for i in 0..all_nodes.len() {
-        println!("{:?}\t{:?}", all_nodes[i].triangle_index, all_nodes[i].triangle_count);
+        data.push(all_nodes[i].bounds.min.x);
+        data.push(all_nodes[i].bounds.min.y);
+        data.push(all_nodes[i].bounds.min.z);
+        data.push(all_nodes[i].bounds.max.x);
+        data.push(all_nodes[i].bounds.max.y);
+        data.push(all_nodes[i].bounds.max.z);
+        data.push(all_nodes[i].triangle_index as f32);
+        data.push(all_nodes[i].triangle_count as f32);
+        data.push(all_nodes[i].child_index as f32);
     }
+
+    // Write data
+    println!("Writing data...");
+    let data = data.iter().map(|d| d.to_ne_bytes()).flatten().collect::<Vec<_>>();
+    std::fs::write("knight_bvh.bin", data).unwrap();
 
     println!("Done!");
 }
