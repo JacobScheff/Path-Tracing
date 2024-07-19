@@ -79,7 +79,6 @@ fn split(parent: &mut Node, depth: i32, all_nodes: &mut Vec<Node>, all_triangles
 }
 
 fn main() {
-    println!("Hello, world!");
     let mut all_nodes: Vec<Node> = Vec::new();
     let mut all_triangles: Vec<Triangle> = Vec::new();
 
@@ -108,7 +107,7 @@ fn main() {
 
     // Build BVH
     println!("Building BVH...");
-    BVH(&mut all_nodes, &mut all_triangles, 2);
+    BVH(&mut all_nodes, &mut all_triangles, 4);
 
     println!("Done!");
 }
