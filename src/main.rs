@@ -317,7 +317,7 @@ impl<'a> State<'a> {
         queue.write_buffer(&sphere_buffer, 0, bytemuck::cast_slice(&sphere_data_u8));
 
         // Load triangle data
-        let triangle_data = include_bytes!("../objects/teapot.bin");
+        let triangle_data = include_bytes!("../objects/dragon_8k.bin");
         let triangle_data = triangle_data.to_vec();
         let triangle_data = triangle_data.chunks(4).collect::<Vec<_>>();
         let triangle_data = triangle_data
@@ -342,7 +342,7 @@ impl<'a> State<'a> {
         queue.write_buffer(&triangle_buffer, 0, bytemuck::cast_slice(&triangle_data_u8));
 
         // Create a bounding box for the triangles
-        let bvh_data = include_bytes!("../objects/teapot_bvh.bin");
+        let bvh_data = include_bytes!("../objects/dragon_8k_bvh.bin");
         let bvh_data = bvh_data.to_vec();
         let bvh_data = bvh_data.chunks(4).collect::<Vec<_>>();
         let bvh_data = bvh_data
