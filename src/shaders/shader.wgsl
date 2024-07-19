@@ -154,19 +154,6 @@ fn calculate_ray_collision(ray: Ray) -> HitInfo {
             closest_hit = hit_info;
         }
 
-        // for (var i = 0u; i < triangle_count; i = i + 1u) {
-        //     let triangle: array<vec3<f32>, 3> = array<vec3<f32>, 3>(
-        //         vec3<f32>(triangle_data[i * 9], triangle_data[i * 9 + 1], triangle_data[i * 9 + 2]),
-        //         vec3<f32>(triangle_data[i * 9 + 3], triangle_data[i * 9 + 4], triangle_data[i * 9 + 5]),
-        //         vec3<f32>(triangle_data[i * 9 + 6], triangle_data[i * 9 + 7], triangle_data[i * 9 + 8]),
-        //     );
-        //     var hit_info: HitInfo = ray_triangle(ray, triangle);
-
-        //     if hit_info.did_hit && hit_info.distance < closest_hit.distance {
-        //         closest_hit = hit_info;
-        //     }
-        // }
-
     return closest_hit;
 }
 
