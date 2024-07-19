@@ -171,7 +171,6 @@ fn ray_triangle_bvh(ray: Ray) -> HitInfo {
         stack_index--;
         let node = node_stack[stack_index];
 
-        if(ray_box(ray, array<f32, 6>(node[0], node[1], node[2], node[3], node[4], node[5])) < result.distance){
             if(node[8] == 0) {
                 // Leaf node (no children, so test triangles)
                 for(var i: u32 = u32(node[6]); i < u32(node[6] + node[7]); i++){
@@ -185,13 +184,32 @@ fn ray_triangle_bvh(ray: Ray) -> HitInfo {
                     }
                 }
             } else {
-                // Push children onto stack to be tested
-                node_stack[stack_index] = array<f32, 9>(bvh_data[u32((node[8] + 1) * 9)], bvh_data[u32((node[8] + 1) * 9 + 1)], bvh_data[u32((node[8] + 1) * 9 + 2)], bvh_data[u32((node[8] + 1) * 9 + 3)], bvh_data[u32((node[8] + 1) * 9 + 4)], bvh_data[u32((node[8] + 1) * 9 + 5)], bvh_data[u32((node[8] + 1) * 9 + 6)], bvh_data[u32((node[8] + 1) * 9 + 7)], bvh_data[u32((node[8] + 1) * 9 + 8)]);
-                stack_index++;
-                node_stack[stack_index] = array<f32, 9>(bvh_data[u32(node[8] * 9)], bvh_data[u32(node[8] * 9 + 1)], bvh_data[u32(node[8] * 9 + 2)], bvh_data[u32(node[8] * 9 + 3)], bvh_data[u32(node[8] * 9 + 4)], bvh_data[u32(node[8] * 9 + 5)], bvh_data[u32(node[8] * 9 + 6)], bvh_data[u32(node[8] * 9 + 7)], bvh_data[u32(node[8] * 9 + 8)]);
-                stack_index++;
+                let child_a = array<f32, 9>(bvh_data[u32(node[8] * 9)], bvh_data[u32(node[8] * 9 + 1)], bvh_data[u32(node[8] * 9 + 2)], bvh_data[u32(node[8] * 9 + 3)], bvh_data[u32(node[8] * 9 + 4)], bvh_data[u32(node[8] * 9 + 5)], bvh_data[u32(node[8] * 9 + 6)], bvh_data[u32(node[8] * 9 + 7)], bvh_data[u32(node[8] * 9 + 8)]);
+                let child_b = array<f32, 9>(bvh_data[u32((node[8] + 1) * 9)], bvh_data[u32((node[8] + 1) * 9 + 1)], bvh_data[u32((node[8] + 1) * 9 + 2)], bvh_data[u32((node[8] + 1) * 9 + 3)], bvh_data[u32((node[8] + 1) * 9 + 4)], bvh_data[u32((node[8] + 1) * 9 + 5)], bvh_data[u32((node[8] + 1) * 9 + 6)], bvh_data[u32((node[8] + 1) * 9 + 7)], bvh_data[u32((node[8] + 1) * 9 + 8)]);
+                
+                let dst_a: f32 = ray_box(ray, array<f32, 6>(child_a[0], child_a[1], child_a[2], child_a[3], child_a[4], child_a[5]));
+                let dst_b: f32 = ray_box(ray, array<f32, 6>(child_b[0], child_b[1], child_b[2], child_b[3], child_b[4], child_b[5]));
+
+                if (dst_a > dst_b) {
+                    if dst_a < result.distance {
+                        node_stack[stack_index] = child_a;
+                        stack_index++;
+                    }
+                    if dst_b < result.distance {
+                        node_stack[stack_index] = child_b;
+                        stack_index++;
+                    }
+                } else {
+                    if dst_b < result.distance {
+                        node_stack[stack_index] = child_b;
+                        stack_index++;
+                    }
+                    if dst_a < result.distance {
+                        node_stack[stack_index] = child_a;
+                        stack_index++;
+                    }
+                }
             }
-        }
     }
 
     return result;
