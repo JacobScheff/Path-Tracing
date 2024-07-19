@@ -23,8 +23,8 @@ struct Ray {
 const sphere_count: u32 = 1; // Number of spheres in the scene
 const nums_per_sphere: u32 = 12; // Number of values stored for every sphere
 const triangle_count: u32 = 456; // Number of triangles in the scene
-const bvh_node_count: u32 = 31; // Number of nodes in the BVH
-const bvh_max_depth: u32 = 4; // Max depth of the BVH
+const bvh_node_count: u32 = 127; // Number of nodes in the BVH
+const bvh_max_depth: u32 = 6; // Max depth of the BVH
 const max_bounce_count: u32 = 10; // Max bounces per ray
 const rays_per_pixel: u32 = 1; // Number of rays per pixel
 const screen_size: vec2<f32> = vec2<f32>(1200.0, 600.0); // Size of the screen
@@ -171,7 +171,7 @@ fn calculate_ray_collision(ray: Ray) -> HitInfo {
 }
 
 fn ray_triangle_bvh(ray: Ray) -> HitInfo {
-    var node_stack: array<array<f32, 9>, bvh_max_depth> = array<array<f32, 9>, bvh_max_depth>();
+    var node_stack: array<array<f32, 9>, u32(bvh_max_depth + 1)> = array<array<f32, 9>, u32(bvh_max_depth + 1)>();
     var stack_index: u32 = 0u;
     node_stack[stack_index] = array<f32, 9>(bvh_data[0], bvh_data[1], bvh_data[2], bvh_data[3], bvh_data[4], bvh_data[5], bvh_data[6], bvh_data[7], bvh_data[8]);
     stack_index++;
