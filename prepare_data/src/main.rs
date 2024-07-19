@@ -114,7 +114,7 @@ fn main() {
 
     // Build BVH
     println!("Building BVH...");
-    BVH(&mut all_nodes, &mut all_triangles, 8);
+    BVH(&mut all_nodes, &mut all_triangles, 12);
 
     // Format data for writing: min, max, triangle_index, triangle_count, child_index
     println!("Formatting data for write...");
