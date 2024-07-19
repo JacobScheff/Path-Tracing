@@ -147,18 +147,21 @@ fn calculate_ray_collision(ray: Ray) -> HitInfo {
         }
     }
 
-        for (var i = 0u; i < triangle_count; i = i + 1u) {
-            let triangle: array<vec3<f32>, 3> = array<vec3<f32>, 3>(
-                vec3<f32>(triangle_data[i * 9], triangle_data[i * 9 + 1], triangle_data[i * 9 + 2]),
-                vec3<f32>(triangle_data[i * 9 + 3], triangle_data[i * 9 + 4], triangle_data[i * 9 + 5]),
-                vec3<f32>(triangle_data[i * 9 + 6], triangle_data[i * 9 + 7], triangle_data[i * 9 + 8]),
-            );
-            var hit_info: HitInfo = ray_triangle(ray, triangle);
+        // Check for triangle intersections using BVH
+        closest_hit = ray_triangle_bvh(ray);
 
-            if hit_info.did_hit && hit_info.distance < closest_hit.distance {
-                closest_hit = hit_info;
-            }
-        }
+        // for (var i = 0u; i < triangle_count; i = i + 1u) {
+        //     let triangle: array<vec3<f32>, 3> = array<vec3<f32>, 3>(
+        //         vec3<f32>(triangle_data[i * 9], triangle_data[i * 9 + 1], triangle_data[i * 9 + 2]),
+        //         vec3<f32>(triangle_data[i * 9 + 3], triangle_data[i * 9 + 4], triangle_data[i * 9 + 5]),
+        //         vec3<f32>(triangle_data[i * 9 + 6], triangle_data[i * 9 + 7], triangle_data[i * 9 + 8]),
+        //     );
+        //     var hit_info: HitInfo = ray_triangle(ray, triangle);
+
+        //     if hit_info.did_hit && hit_info.distance < closest_hit.distance {
+        //         closest_hit = hit_info;
+        //     }
+        // }
 
     return closest_hit;
 }
@@ -180,8 +183,8 @@ fn ray_triangle_bvh(ray: Ray) -> HitInfo {
         if(ray_box(ray, array<f32, 6>(node[0], node[1], node[2], node[3], node[4], node[5]))){
             if(node[8] == 0) {
                 // Leaf node (no children, so test triangles)
-                for(var i: u32 = u32(node[6]); i < u32(node[6] + node[8]); i++){
-                    let triangle_hit_info = ray_triangle(ray, array<vec3<f32>, 3>(
+                for(var i: u32 = u32(node[6]); i < u32(node[6] + node[7]); i++){
+                    let triangle_hit_info: HitInfo = ray_triangle(ray, array<vec3<f32>, 3>(
                         vec3<f32>(triangle_data[i * 9], triangle_data[i * 9 + 1], triangle_data[i * 9 + 2]),
                         vec3<f32>(triangle_data[i * 9 + 3], triangle_data[i * 9 + 4], triangle_data[i * 9 + 5]),
                         vec3<f32>(triangle_data[i * 9 + 6], triangle_data[i * 9 + 7], triangle_data[i * 9 + 8])
