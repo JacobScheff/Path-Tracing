@@ -23,10 +23,10 @@ struct Ray {
 const sphere_count: u32 = 1; // Number of spheres in the scene
 const nums_per_sphere: u32 = 12; // Number of values stored for every sphere
 const triangle_count: u32 = 456; // Number of triangles in the scene
-const bvh_node_count: u32 = 8190; // Number of nodes in the BVH
-const bvh_max_depth: u32 = 12; // Max depth of the BVH
+const bvh_node_count: u32 = 30; // Number of nodes in the BVH
+const bvh_max_depth: u32 = 4; // Max depth of the BVH
 const max_bounce_count: u32 = 10; // Max bounces per ray
-const rays_per_pixel: u32 = 2; // Number of rays per pixel
+const rays_per_pixel: u32 = 1; // Number of rays per pixel
 const screen_size: vec2<f32> = vec2<f32>(1200.0, 600.0); // Size of the screen
 const fov: f32 = 60.0 * 3.14159 / 180.0; // Field of view in radians
 const aspect_ratio: f32 = screen_size.x / screen_size.y; // Aspect ratio of the screen
@@ -175,7 +175,7 @@ fn ray_triangle_bvh(ray: Ray) -> HitInfo {
 
     var result: HitInfo;
     result.did_hit = false;
-    result.distance = 1000000.0;    
+    result.distance = 1000000.0;
 
     while(stack_index > 0){
         stack_index--;
