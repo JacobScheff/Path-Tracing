@@ -46,7 +46,21 @@ fn split(parent: &mut Node, depth: i32, all_nodes: &mut Vec<Node>, all_triangles
     // println!("Size at depth {} is {:?}", depth, size);
 
     // Create child nodes
-    parent.child_index = all_nodes.len() as i32;
+    // parent.child_index = all_nodes.len() as i32;
+    if all_nodes.len() != 0 {
+        // Find the index of the parent node in the all_nodes vector
+        let mut parent_index: i32 = 0;
+        for i in 0..all_nodes.len() {
+            if all_nodes[i].bounds == parent.bounds {
+                parent_index = i as i32;
+                break;
+            }
+        }
+
+        // Set the child index of the parent node
+        all_nodes[parent_index as usize].child_index = all_nodes.len() as i32;
+    }
+    
     let mut child_a: Node = Node::new(BoundingBox::new(), parent.triangle_index, 0);
     let mut child_b: Node = Node::new(BoundingBox::new(), parent.triangle_index, 0);
 
@@ -138,7 +152,7 @@ fn main() {
     std::fs::write("../objects/knight_bvh.bin", data).unwrap();
 
     for i in 0..all_nodes.len() {
-        println!("Node {}, triangle index: {:?}, triangle count: {:?}", i, all_nodes[i].triangle_index, all_nodes[i].triangle_count);
+        println!("Node {}\ttriangle index: {:?}\ttriangle count: {:?}\t child index:{:?}", i, all_nodes[i].triangle_index, all_nodes[i].triangle_count, all_nodes[i].child_index);
     }
 
     println!("Done!");

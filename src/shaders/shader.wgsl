@@ -149,7 +149,10 @@ fn calculate_ray_collision(ray: Ray) -> HitInfo {
     }
 
         // Check for triangle intersections using BVH
-        closest_hit = ray_triangle_bvh(ray);
+        var hit_info: HitInfo = ray_triangle_bvh(ray);
+        if hit_info.did_hit && hit_info.distance < closest_hit.distance {
+            closest_hit = hit_info;
+        }
 
         // for (var i = 0u; i < triangle_count; i = i + 1u) {
         //     let triangle: array<vec3<f32>, 3> = array<vec3<f32>, 3>(

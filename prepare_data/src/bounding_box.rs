@@ -8,6 +8,12 @@ pub struct BoundingBox {
     pub center: Vector,
 }
 
+impl PartialEq for BoundingBox {
+    fn eq(&self, other: &BoundingBox) -> bool {
+        self.min == other.min && self.max == other.max && self.center == other.center
+    }
+}
+
 impl BoundingBox {
     pub fn new() -> BoundingBox {
         let min = Vector::new(std::f32::INFINITY, std::f32::INFINITY, std::f32::INFINITY);
