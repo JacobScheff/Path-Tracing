@@ -216,39 +216,13 @@ fn ray_triangle_bvh(ray: Ray) -> HitInfo {
                 }
 
                 if(dst_far < result.distance){
-                        node_stack[stack_index] = child_index_far;
-                        stack_index++;
-                    }
-                    if(dst_near < result.distance){
-                        node_stack[stack_index] = child_index_near;
-                        stack_index++;
-                    }
-                
-                // let child_a = get_node(i32(node[8]));
-                // let child_b = get_node(i32(node[8] + 1));
-                
-                // let dst_a: f32 = ray_box(ray, array<f32, 6>(child_a[0], child_a[1], child_a[2], child_a[3], child_a[4], child_a[5]));
-                // let dst_b: f32 = ray_box(ray, array<f32, 6>(child_b[0], child_b[1], child_b[2], child_b[3], child_b[4], child_b[5]));
-
-                // if (dst_a > dst_b) {
-                //     if dst_a < result.distance {
-                //         node_stack[stack_index] = i32(child_a[8]);
-                //         stack_index++;
-                //     }
-                //     if dst_b < result.distance {
-                //         node_stack[stack_index] = i32(child_b[8]);
-                //         stack_index++;
-                //     }
-                // } else {
-                //     if dst_b < result.distance {
-                //         node_stack[stack_index] = i32(child_b[8]);
-                //         stack_index++;
-                //     }
-                //     if dst_a < result.distance {
-                //         node_stack[stack_index] = i32(child_a[8]);
-                //         stack_index++;
-                //     }
-                // }
+                    node_stack[stack_index] = child_index_far;
+                    stack_index++;
+                }
+                if(dst_near < result.distance){
+                    node_stack[stack_index] = child_index_near;
+                    stack_index++;
+                }
             }
     }
 
@@ -304,7 +278,7 @@ fn ray_triangle(ray: Ray, triangle: array<vec3<f32>, 3>) -> HitInfo {
         hit_info.color = vec3<f32>(0.25, 1.0, 0.25);
         hit_info.emission_color = vec3<f32>(0.0, 0.0, 0.0);
         hit_info.emission_strength = 0.0;
-        hit_info.smoothness = 0.8;
+        hit_info.smoothness = 0.75;
     }
 
     return hit_info;
