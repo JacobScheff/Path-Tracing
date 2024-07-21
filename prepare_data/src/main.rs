@@ -85,37 +85,18 @@ fn split(
     }
 
     // Choose split axis and position
-    let size: Vector = parent.bounds.max - parent.bounds.min;
-    let split_axis = if size.x > size.y.max(size.z) {
-        0
-    } else if size.y > size.z {
-        1
-    } else {
-        2
-    };
-    let mut split_pos: f32 = 0.0;
-    if split_axis == 0 {
-        split_pos = parent.bounds.center.x;
-    } else if split_axis == 1 {
-        split_pos = parent.bounds.center.y;
-    } else {
-        split_pos = parent.bounds.center.z;
-    }
+    let (split_axis, split_pos, cost) = choose_split(parent.clone(), all_triangles);
 
-    // println!("Size at depth {} is {:?}", depth, size);
+    // Stop splitting if it doesn't improve the cost
+    if cost >= node_cost(parent.bounds.max - parent.bounds.min, parent.triangle_count as f32) {
+        return;
+    }
 
     let mut child_a: Node = Node::new(BoundingBox::new(), parent.triangle_index, 0);
     let mut child_b: Node = Node::new(BoundingBox::new(), parent.triangle_index, 0);
 
     for i in parent.triangle_index..parent.triangle_index + parent.triangle_count {
-        let mut is_side_a: bool = false;
-        if split_axis == 0 {
-            is_side_a = all_triangles[i as usize].center.x < split_pos;
-        } else if split_axis == 1 {
-            is_side_a = all_triangles[i as usize].center.y < split_pos;
-        } else {
-            is_side_a = all_triangles[i as usize].center.z < split_pos;
-        }
+        let mut is_side_a: bool = all_triangles[i as usize].center[split_axis as usize] < split_pos;
 
         if is_side_a {
             child_a
@@ -126,9 +107,6 @@ fn split(
             // Ensure that the triangles of each child node are grouped together.
             // This allows the node to 'store' the triangles with an index and count.
             let swap: i32 = child_a.triangle_index + child_a.triangle_count - 1;
-            // let temp: Triangle = all_triangles[i as usize];
-            // all_triangles[i as usize] = all_triangles[swap as usize];
-            // all_triangles[swap as usize] = temp;
             all_triangles.swap(i as usize, swap as usize);
 
             child_b.triangle_index += 1;
