@@ -325,21 +325,15 @@ impl<'a> State<'a> {
             .map(|d| f32::from_ne_bytes([d[0], d[1], d[2], d[3]]))
             .collect::<Vec<_>>();
 
-        let triangle_data_u8 = triangle_data
-            .iter()
-            .map(|f| f.to_ne_bytes().to_vec())
-            .flatten()
-            .collect::<Vec<_>>();
-
         // Buffer for triangle data
         let triangle_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("Triangle Buffer Data"),
-            contents: bytemuck::cast_slice(&triangle_data_u8),
+            contents: bytemuck::cast_slice(&triangle_data),
             usage: BufferUsages::STORAGE | BufferUsages::COPY_DST,
         });
 
         // Write triangle data to buffer
-        queue.write_buffer(&triangle_buffer, 0, bytemuck::cast_slice(&triangle_data_u8));
+        queue.write_buffer(&triangle_buffer, 0, bytemuck::cast_slice(&triangle_data));
 
         // Create a bounding box for the triangles
         let bvh_data = include_bytes!("../objects/dragon_8k_bvh.bin");
@@ -350,17 +344,10 @@ impl<'a> State<'a> {
             .map(|d| f32::from_ne_bytes([d[0], d[1], d[2], d[3]]))
             .collect::<Vec<_>>();
 
-        // Convert bvh data to u8
-        let bvh_data_u8 = bvh_data
-            .iter()
-            .map(|f| f.to_ne_bytes().to_vec())
-            .flatten()
-            .collect::<Vec<_>>();
-
         // Buffer for the bounding box
         let bvh_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("Bounding Box Buffer Data"),
-            contents: bytemuck::cast_slice(&bvh_data_u8),
+            contents: bytemuck::cast_slice(&bvh_data),
             usage: BufferUsages::STORAGE | BufferUsages::COPY_DST,
         });
 
@@ -375,16 +362,16 @@ impl<'a> State<'a> {
         let frame_data =
             vec![vec![vec![0.0; 3]; size.width as usize]; ((size.height as f32) * 1.5) as usize];
         let frame_data_flat: Vec<f32> = frame_data.iter().flatten().flatten().copied().collect();
-        let frame_data_u8: Vec<u8> = frame_data_flat
-            .iter()
-            .map(|f| f.to_ne_bytes().to_vec())
-            .flatten()
-            .collect();
+        // let frame_data_u8: Vec<u8> = frame_data_flat
+        //     .iter()
+        //     .map(|f| f.to_ne_bytes().to_vec())
+        //     .flatten()
+        //     .collect();
 
         // Buffer for the frame data
         let frame_data_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("Frame Data Buffer"),
-            contents: bytemuck::cast_slice(&frame_data_u8),
+            contents: bytemuck::cast_slice(&frame_data_flat),
             usage: BufferUsages::STORAGE | BufferUsages::COPY_DST,
         });
 
