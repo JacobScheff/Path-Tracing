@@ -18,7 +18,7 @@ fn BVH(all_nodes: &mut Vec<Node>, all_triangles: &mut Vec<Triangle>, max_depth: 
     // Create root noode (represents entire, un-split mesh), and split it
     let mut root: Node = Node::new(bounds, 0, all_triangles.len() as i32);
     all_nodes.push(root);
-    split(&mut root, 0, all_nodes, all_triangles, max_depth);
+    split(&mut root, 0, 0, all_nodes, all_triangles, max_depth);
 }
 
 fn node_cost(size: Vector, num_triangles: f32) -> f32 {
@@ -75,6 +75,7 @@ fn evaluate_split(node: Node, axis: usize, pos: f32, all_triangles: &mut Vec<Tri
 
 fn split(
     parent: &mut Node,
+    parent_index: usize,
     depth: i32,
     all_nodes: &mut Vec<Node>,
     all_triangles: &mut Vec<Triangle>,
@@ -117,27 +118,35 @@ fn split(
     }
 
     if child_a.triangle_count > 0 && child_b.triangle_count > 0 {
-        if all_nodes.len() != 0 {
-            // Find the index of the parent node in the all_nodes vector
-            let mut parent_index: i32 = 0;
-            for i in 0..all_nodes.len() {
-                if all_nodes[i].bounds == parent.bounds {
-                    parent_index = i as i32;
-                    break;
-                }
-            }
+        // if all_nodes.len() != 0 {
+        //     // Find the index of the parent node in the all_nodes vector
+        //     let mut parent_index_loop: i32 = 0;
+        //     for i in 0..all_nodes.len() {
+        //         if all_nodes[i].bounds == parent.bounds {
+        //             parent_index_loop = i as i32;
+        //             break;
+        //         }
+        //     }
 
-            // Set the child index of the parent node
-            if all_nodes[parent_index as usize].child_index == 0 {
-                all_nodes[parent_index as usize].child_index = all_nodes.len() as i32;
-            }
-        }
+        //     // Set the child index of the parent node
+        //     if all_nodes[parent_index_loop as usize].child_index == 0 {
+        //         all_nodes[parent_index_loop as usize].child_index = all_nodes.len() as i32;
+        //     }
 
+        //     if parent_index_loop != parent_index as i32 {
+        //         println!("Parent index mismatch: {} != {}", parent_index_loop, parent_index);
+        //     }
+        // }
+
+        let child_a_index: usize = all_nodes.len();
         all_nodes.push(child_a);
+        let child_b_index: usize = all_nodes.len();
         all_nodes.push(child_b);
+        
+        all_nodes[parent_index].child_index = child_a_index as i32;
 
-        split(&mut child_a, depth + 1, all_nodes, all_triangles, max_depth);
-        split(&mut child_b, depth + 1, all_nodes, all_triangles, max_depth);
+        split(&mut child_a, child_a_index, depth + 1, all_nodes, all_triangles, max_depth);
+        split(&mut child_b, child_b_index, depth + 1, all_nodes, all_triangles, max_depth);
     }
 }
 
