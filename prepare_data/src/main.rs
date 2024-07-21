@@ -21,6 +21,58 @@ fn BVH(all_nodes: &mut Vec<Node>, all_triangles: &mut Vec<Triangle>, max_depth: 
     split(&mut root, 0, all_nodes, all_triangles, max_depth);
 }
 
+fn node_cost(size: Vector, num_triangles: f32) -> f32 {
+    let half_area: f32 = size.x * (size.y + size.z) + size.y * size.z;
+    return half_area * num_triangles;
+}
+
+fn choose_split(node: Node, all_triangles: &mut Vec<Triangle>) -> (i32, f32, f32) {
+    const num_tests_per_axis: i32 = 5;
+    let mut best_cost: f32 = std::f32::INFINITY;
+    let mut best_pos: f32 = 0.0;
+    let mut best_axis: i32 = 0;
+
+    for axis in 0..3 {
+        let bounds_start: f32 = node.bounds.min[axis];
+        let bounds_end: f32 = node.bounds.max[axis];
+
+        for i in 0..num_tests_per_axis {
+            let split_t: f32 = (i + 1) as f32 / (num_tests_per_axis + 1) as f32;
+            let pos: f32 = bounds_start + (bounds_end - bounds_start) * split_t;
+            let cost: f32 = evaluate_split(node, axis, pos, all_triangles);
+
+            if cost < best_cost {
+                best_cost = cost;
+                best_pos = pos;
+                best_axis = axis as i32;
+            }
+        }
+    }
+
+    (best_axis, best_pos, best_cost)
+}
+
+fn evaluate_split(node: Node, axis: usize, pos: f32, all_triangles: &mut Vec<Triangle>) -> f32 {
+    let mut bounds_a: BoundingBox = BoundingBox::new();
+    let mut bounds_b: BoundingBox = BoundingBox::new();
+    let mut num_in_a: i32 = 0;
+    let mut num_in_b: i32 = 0;
+
+    for i in node.triangle_index..node.triangle_index + node.triangle_count {
+        let tri: Triangle = all_triangles[i as usize];
+        if tri.center[axis] < pos {
+            bounds_a.grow_to_include(tri);
+            num_in_a += 1;
+        } else {
+            bounds_b.grow_to_include(tri);
+            num_in_b += 1;
+        }
+    }
+
+    return node_cost(bounds_a.max - bounds_a.min, num_in_a as f32)
+        + node_cost(bounds_b.max - bounds_b.min, num_in_b as f32);
+}
+
 fn split(
     parent: &mut Node,
     depth: i32,

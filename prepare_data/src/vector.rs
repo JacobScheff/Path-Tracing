@@ -1,4 +1,4 @@
-use std::ops::{Add, Sub, Mul, Div};
+use std::ops::{Add, Sub, Mul, Div, Index};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Vector {
@@ -106,6 +106,19 @@ impl Div<f32> for Vector {
 impl PartialEq for Vector {
     fn eq(&self, other: &Vector) -> bool {
         self.x == other.x && self.y == other.y && self.z == other.z
+    }
+}
+
+impl Index<usize> for Vector {
+    type Output = f32;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        match index {
+            0 => &self.x,
+            1 => &self.y,
+            2 => &self.z,
+            _ => panic!("Index out of bounds for Vector"),
+        }
     }
 }
 
