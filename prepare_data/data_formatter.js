@@ -1,5 +1,5 @@
-const input_path = "../objects/dragon_80k.stl"
-const output_path = "../objects/dragon_80k.bin"
+const input_path = "../objects/dragon_800k.stl"
+const output_path = "../objects/dragon_800k.bin"
 
 const fs = require('fs')
 const scale = 1
