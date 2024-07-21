@@ -157,10 +157,14 @@ fn calculate_ray_collision(ray: Ray) -> HitInfo {
     return closest_hit;
 }
 
+fn get_node(index: i32) -> array<f32, 9> {
+    return array<f32, 9>(bvh_data[u32(index * 9)], bvh_data[u32(index * 9 + 1)], bvh_data[u32(index * 9 + 2)], bvh_data[u32(index * 9 + 3)], bvh_data[u32(index * 9 + 4)], bvh_data[u32(index * 9 + 5)], bvh_data[u32(index * 9 + 6)], bvh_data[u32(index * 9 + 7)], bvh_data[u32(index * 9 + 8)]);
+}
+
 fn ray_triangle_bvh(ray: Ray) -> HitInfo {
-    var node_stack: array<array<f32, 9>, u32(bvh_max_depth + 1)> = array<array<f32, 9>, u32(bvh_max_depth + 1)>();
-    var stack_index: u32 = 0u;
-    node_stack[stack_index] = array<f32, 9>(bvh_data[0], bvh_data[1], bvh_data[2], bvh_data[3], bvh_data[4], bvh_data[5], bvh_data[6], bvh_data[7], bvh_data[8]);
+    var node_stack: array<i32, u32(bvh_max_depth + 1)> = array<i32, u32(bvh_max_depth + 1)>();
+    var stack_index: i32 = 0;
+    node_stack[stack_index] = 0;
     stack_index++;
 
     var result: HitInfo;
@@ -169,7 +173,8 @@ fn ray_triangle_bvh(ray: Ray) -> HitInfo {
 
     while(stack_index > 0){
         stack_index--;
-        let node = node_stack[stack_index];
+        let node_index: i32 = node_stack[stack_index];
+        let node: array<f32, 9> = get_node(node_index);
 
             if(node[8] == 0) {
                 // Leaf node (no children, so test triangles)
@@ -184,31 +189,66 @@ fn ray_triangle_bvh(ray: Ray) -> HitInfo {
                     }
                 }
             } else {
-                let child_a = array<f32, 9>(bvh_data[u32(node[8] * 9)], bvh_data[u32(node[8] * 9 + 1)], bvh_data[u32(node[8] * 9 + 2)], bvh_data[u32(node[8] * 9 + 3)], bvh_data[u32(node[8] * 9 + 4)], bvh_data[u32(node[8] * 9 + 5)], bvh_data[u32(node[8] * 9 + 6)], bvh_data[u32(node[8] * 9 + 7)], bvh_data[u32(node[8] * 9 + 8)]);
-                let child_b = array<f32, 9>(bvh_data[u32((node[8] + 1) * 9)], bvh_data[u32((node[8] + 1) * 9 + 1)], bvh_data[u32((node[8] + 1) * 9 + 2)], bvh_data[u32((node[8] + 1) * 9 + 3)], bvh_data[u32((node[8] + 1) * 9 + 4)], bvh_data[u32((node[8] + 1) * 9 + 5)], bvh_data[u32((node[8] + 1) * 9 + 6)], bvh_data[u32((node[8] + 1) * 9 + 7)], bvh_data[u32((node[8] + 1) * 9 + 8)]);
-                
+                let child_index_a: i32 = i32(node[8]);
+                let child_index_b: i32 = i32(node[8] + 1);
+                let child_a: array<f32, 9> = get_node(child_index_a);
+                let child_b: array<f32, 9> = get_node(child_index_b);
+
                 let dst_a: f32 = ray_box(ray, array<f32, 6>(child_a[0], child_a[1], child_a[2], child_a[3], child_a[4], child_a[5]));
                 let dst_b: f32 = ray_box(ray, array<f32, 6>(child_b[0], child_b[1], child_b[2], child_b[3], child_b[4], child_b[5]));
 
-                if (dst_a > dst_b) {
-                    if dst_a < result.distance {
-                        node_stack[stack_index] = child_a;
-                        stack_index++;
-                    }
-                    if dst_b < result.distance {
-                        node_stack[stack_index] = child_b;
-                        stack_index++;
-                    }
-                } else {
-                    if dst_b < result.distance {
-                        node_stack[stack_index] = child_b;
-                        stack_index++;
-                    }
-                    if dst_a < result.distance {
-                        node_stack[stack_index] = child_a;
-                        stack_index++;
-                    }
+                var dst_near: f32;
+                var dst_far: f32;
+                var child_index_near: i32;
+                var child_index_far: i32;
+
+                if (dst_a < dst_b){
+                    dst_near = dst_a;
+                    dst_far = dst_b;
+                    child_index_near = child_index_a;
+                    child_index_far = child_index_b;
                 }
+                else {
+                    dst_near = dst_b;
+                    dst_far = dst_a;
+                    child_index_near = child_index_b;
+                    child_index_far = child_index_a;
+                }
+
+                if(dst_far < result.distance){
+                        node_stack[stack_index] = child_index_far;
+                        stack_index++;
+                    }
+                    if(dst_near < result.distance){
+                        node_stack[stack_index] = child_index_near;
+                        stack_index++;
+                    }
+                
+                // let child_a = get_node(i32(node[8]));
+                // let child_b = get_node(i32(node[8] + 1));
+                
+                // let dst_a: f32 = ray_box(ray, array<f32, 6>(child_a[0], child_a[1], child_a[2], child_a[3], child_a[4], child_a[5]));
+                // let dst_b: f32 = ray_box(ray, array<f32, 6>(child_b[0], child_b[1], child_b[2], child_b[3], child_b[4], child_b[5]));
+
+                // if (dst_a > dst_b) {
+                //     if dst_a < result.distance {
+                //         node_stack[stack_index] = i32(child_a[8]);
+                //         stack_index++;
+                //     }
+                //     if dst_b < result.distance {
+                //         node_stack[stack_index] = i32(child_b[8]);
+                //         stack_index++;
+                //     }
+                // } else {
+                //     if dst_b < result.distance {
+                //         node_stack[stack_index] = i32(child_b[8]);
+                //         stack_index++;
+                //     }
+                //     if dst_a < result.distance {
+                //         node_stack[stack_index] = i32(child_a[8]);
+                //         stack_index++;
+                //     }
+                // }
             }
     }
 
