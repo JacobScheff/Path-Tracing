@@ -147,7 +147,7 @@ fn main() {
 
     // Load triangle data
     println!("Loading data...");
-    let triangle_data = include_bytes!("../../objects/dragon_8k.bin");
+    let triangle_data = include_bytes!("../../objects/dragon_80k.bin");
     let triangle_data = triangle_data.to_vec();
     let triangle_data = triangle_data.chunks(4).collect::<Vec<_>>();
     let triangle_data = triangle_data
@@ -180,7 +180,7 @@ fn main() {
 
     // Build BVH
     println!("Building BVH...");
-    let max_depth: i32 = 27;
+    let max_depth: i32 = 20;
     BVH(&mut all_nodes, &mut all_triangles, max_depth);
 
     // Format data for writing: min, max, triangle_index, triangle_count, child_index
@@ -218,13 +218,13 @@ fn main() {
         .map(|d| d.to_ne_bytes())
         .flatten()
         .collect::<Vec<_>>();
-    std::fs::write("../objects/dragon_8k_bvh.bin", data).unwrap();
+    std::fs::write("../objects/dragon_80k_bvh.bin", data).unwrap();
     let triangle_data = triangle_data
         .iter()
         .map(|d| d.to_ne_bytes())
         .flatten()
         .collect::<Vec<_>>();
-    std::fs::write("../objects/dragon_8k.bin", triangle_data).unwrap();
+    std::fs::write("../objects/dragon_80k.bin", triangle_data).unwrap();
 
     // for i in 0..all_nodes.len() {
     //     println!("Node {}\ttriangle index: {:?}\ttriangle count: {:?}\t child index: {:?} \tbounds: ({:?}, {:?}, {:?}), ({:?}, {:?}, {:?})", i, all_nodes[i].triangle_index, all_nodes[i].triangle_count, all_nodes[i].child_index, all_nodes[i].bounds.min.x, all_nodes[i].bounds.min.y, all_nodes[i].bounds.min.z, all_nodes[i].bounds.max.x, all_nodes[i].bounds.max.y, all_nodes[i].bounds.max.z);
