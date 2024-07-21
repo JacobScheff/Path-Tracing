@@ -32,9 +32,15 @@ impl BoundingBox {
     }
 
     pub fn grow_to_include(&mut self, triangle: Triangle) {
-        self.grow_to_include_vector(triangle.get_a());
-        self.grow_to_include_vector(triangle.get_b());
-        self.grow_to_include_vector(triangle.get_c());
+        self.min.x = if (triangle.min.x < self.min.x) { triangle.min.x } else { self.min.x };
+        self.min.y = if (triangle.min.y < self.min.y) { triangle.min.y } else { self.min.y };
+        self.min.z = if (triangle.min.z < self.min.z) { triangle.min.z } else { self.min.z };
+
+        self.max.x = if (triangle.max.x > self.max.x) { triangle.max.x } else { self.max.x };
+        self.max.y = if (triangle.max.y > self.max.y) { triangle.max.y } else { self.max.y };
+        self.max.z = if (triangle.max.z > self.max.z) { triangle.max.z } else { self.max.z };
+
+        self.center = (self.min + self.max) / 2.0;
     }
 
 }
