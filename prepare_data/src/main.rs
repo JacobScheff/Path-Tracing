@@ -118,30 +118,11 @@ fn split(
     }
 
     if child_a.triangle_count > 0 && child_b.triangle_count > 0 {
-        // if all_nodes.len() != 0 {
-        //     // Find the index of the parent node in the all_nodes vector
-        //     let mut parent_index_loop: i32 = 0;
-        //     for i in 0..all_nodes.len() {
-        //         if all_nodes[i].bounds == parent.bounds {
-        //             parent_index_loop = i as i32;
-        //             break;
-        //         }
-        //     }
-
-        //     // Set the child index of the parent node
-        //     if all_nodes[parent_index_loop as usize].child_index == 0 {
-        //         all_nodes[parent_index_loop as usize].child_index = all_nodes.len() as i32;
-        //     }
-
-        //     if parent_index_loop != parent_index as i32 {
-        //         println!("Parent index mismatch: {} != {}", parent_index_loop, parent_index);
-        //     }
-        // }
-
-        let child_a_index: usize = all_nodes.len();
         all_nodes.push(child_a);
-        let child_b_index: usize = all_nodes.len();
         all_nodes.push(child_b);
+
+        let child_a_index: usize = all_nodes.len() - 2;
+        let child_b_index: usize = all_nodes.len() - 1;
         
         all_nodes[parent_index].child_index = child_a_index as i32;
 
