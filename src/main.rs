@@ -152,12 +152,25 @@ impl<'a> State<'a> {
         let instance = wgpu::Instance::new(instance_descriptor);
         let surface = instance.create_surface(window).unwrap();
 
-        let adapter_descriptor = wgpu::RequestAdapterOptionsBase {
-            power_preference: wgpu::PowerPreference::default(),
-            compatible_surface: Some(&surface),
-            force_fallback_adapter: false,
-        };
-        let adapter = instance.request_adapter(&adapter_descriptor).await.unwrap();
+        // let adapter_descriptor = wgpu::RequestAdapterOptionsBase {
+        //     power_preference: wgpu::PowerPreference::default(),
+        //     compatible_surface: Some(&surface),
+        //     force_fallback_adapter: false,
+        // };
+        // let adapter = instance.request_adapter(&adapter_descriptor).await.unwrap();
+
+        // // Print all the available adapters
+        // for adapter in instance.enumerate_adapters(wgpu::Backends::all()) {
+        //     println!("{:?}", adapter.get_info());
+        // }
+
+        // Pick the second adapter (NVIDIA 3060 RTX)
+        let adapter = instance
+            .enumerate_adapters(wgpu::Backends::all())
+            .into_iter()
+            .nth(1)
+            .unwrap();
+        println!("{:?}", adapter.get_info());
 
         let device_descriptor = wgpu::DeviceDescriptor {
             required_features: wgpu::Features::empty(),
@@ -298,7 +311,7 @@ impl<'a> State<'a> {
         //     0.0, -5030.0, 0.0, 5000.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
         // ]);
         sphere_data.push(vec![
-            40.0, 40.0, -20.0, 10.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10.0, 0.0,
+            40.0, 40.0, -20.0, 10.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 10.0, 0.0,
         ]); // Light source
 
         let sphere_data_u8: Vec<u8> = sphere_data

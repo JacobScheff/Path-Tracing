@@ -26,7 +26,7 @@ const triangle_count: u32 = 8712; // Number of triangles in the scene
 const bvh_node_count: u32 = 11941; // Number of nodes in the BVH
 const bvh_max_depth: u32 = 20; // Max depth of the BVH
 const max_bounce_count: u32 = 10; // Max bounces per ray
-const rays_per_pixel: u32 = 1; // Number of rays per pixel
+const rays_per_pixel: u32 = 10; // Number of rays per pixel
 const screen_size: vec2<f32> = vec2<f32>(1200.0, 600.0); // Size of the screen
 const fov: f32 = 60.0 * 3.14159 / 180.0; // Field of view in radians
 const aspect_ratio: f32 = screen_size.x / screen_size.y; // Aspect ratio of the screen
@@ -261,7 +261,7 @@ fn ray_triangle(ray: Ray, triangle: array<vec3<f32>, 3>) -> HitInfo {
         hit_info.distance = dst;
         hit_info.position = ray.origin + ray.dir * dst;
         hit_info.normal = normalize(triangle[0] * w + triangle[1] * u + triangle[2] * v);
-        hit_info.color = vec3<f32>(1.0, 1.0, 1.0);
+        hit_info.color = vec3<f32>(0.25, 1.0, 0.25);
         hit_info.emission_color = vec3<f32>(0.0, 0.0, 0.0);
         hit_info.emission_strength = 0.0;
         hit_info.smoothness = 0.0;
