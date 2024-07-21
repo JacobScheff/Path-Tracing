@@ -300,7 +300,7 @@ fn ray_triangle(ray: Ray, triangle: array<vec3<f32>, 3>) -> HitInfo {
         hit_info.did_hit = determinant >= 0.0001 && dst >= 0 && u >= 0 && v >= 0 && w >= 0;
         hit_info.distance = dst;
         hit_info.position = ray.origin + ray.dir * dst;
-        hit_info.normal = normalize(triangle[0] * w + triangle[1] * u + triangle[2] * v);
+        hit_info.normal = normalize(normal_vector);
         hit_info.color = vec3<f32>(0.25, 1.0, 0.25);
         hit_info.emission_color = vec3<f32>(0.0, 0.0, 0.0);
         hit_info.emission_strength = 0.0;
