@@ -26,7 +26,7 @@ const triangle_count: u32 = 87130; // Number of triangles in the scene
 const bvh_node_count: u32 = 173791; // Number of nodes in the BVH
 const bvh_max_depth: u32 = 27; // Max depth of the BVH
 const max_bounce_count: u32 = 10; // Max bounces per ray
-const rays_per_pixel: u32 = 10; // Number of rays per pixel
+const rays_per_pixel: u32 = 20; // Number of rays per pixel
 const screen_size: vec2<f32> = vec2<f32>(1200.0, 600.0); // Size of the screen
 const fov: f32 = 60.0 * 3.14159 / 180.0; // Field of view in radians
 const aspect_ratio: f32 = screen_size.x / screen_size.y; // Aspect ratio of the screen
@@ -113,7 +113,7 @@ fn trace(ray_in: Ray, seed: u32) -> vec3<f32> {
         var hit_info: HitInfo = calculate_ray_collision(ray);
         if(hit_info.did_hit) {
             ray.origin = hit_info.position;
-            let diffuse_dir: vec3<f32> = normalize(hit_info.normal + random_direction(seed + i * 12345 + frame_count * 393939));
+            let diffuse_dir: vec3<f32> = normalize(hit_info.normal + random_direction(seed + i * 12345 + frame_count * 393939123));
             let specular_dir: vec3<f32> = reflect(ray.dir, hit_info.normal);
             ray.dir = lerp(diffuse_dir, specular_dir, hit_info.smoothness);
 
@@ -304,7 +304,7 @@ fn ray_triangle(ray: Ray, triangle: array<vec3<f32>, 3>) -> HitInfo {
         hit_info.color = vec3<f32>(0.25, 1.0, 0.25);
         hit_info.emission_color = vec3<f32>(0.0, 0.0, 0.0);
         hit_info.emission_strength = 0.0;
-        hit_info.smoothness = 0.0;
+        hit_info.smoothness = 0.8;
     }
 
     return hit_info;
