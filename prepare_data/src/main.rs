@@ -125,6 +125,8 @@ fn main() {
         .map(|d| f32::from_ne_bytes([d[0], d[1], d[2], d[3]]))
         .collect::<Vec<_>>();
 
+    let start_time: std::time::Instant = std::time::Instant::now();
+
     // Convert to vertices
     println!("Forming data for build...");
     let mut vertices: Vec<Vector> = Vec::new();
@@ -194,11 +196,12 @@ fn main() {
         .collect::<Vec<_>>();
     std::fs::write("../objects/dragon_8k.bin", triangle_data).unwrap();
 
-    for i in 0..all_nodes.len() {
-        println!("Node {}\ttriangle index: {:?}\ttriangle count: {:?}\t child index: {:?} \tbounds: ({:?}, {:?}, {:?}), ({:?}, {:?}, {:?})", i, all_nodes[i].triangle_index, all_nodes[i].triangle_count, all_nodes[i].child_index, all_nodes[i].bounds.min.x, all_nodes[i].bounds.min.y, all_nodes[i].bounds.min.z, all_nodes[i].bounds.max.x, all_nodes[i].bounds.max.y, all_nodes[i].bounds.max.z);
-    }
+    // for i in 0..all_nodes.len() {
+    //     println!("Node {}\ttriangle index: {:?}\ttriangle count: {:?}\t child index: {:?} \tbounds: ({:?}, {:?}, {:?}), ({:?}, {:?}, {:?})", i, all_nodes[i].triangle_index, all_nodes[i].triangle_count, all_nodes[i].child_index, all_nodes[i].bounds.min.x, all_nodes[i].bounds.min.y, all_nodes[i].bounds.min.z, all_nodes[i].bounds.max.x, all_nodes[i].bounds.max.y, all_nodes[i].bounds.max.z);
+    // }
 
     println!("Done!");
     println!("Number of nodes: {}", all_nodes.len());
     println!("Max depth: {}", max_depth);
+    println!("Time taken: {:?}", start_time.elapsed());
 }
