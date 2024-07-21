@@ -23,7 +23,7 @@ struct Ray {
 const sphere_count: u32 = 1; // Number of spheres in the scene
 const nums_per_sphere: u32 = 12; // Number of values stored for every sphere
 const triangle_count: u32 = 8712; // Number of triangles in the scene
-const bvh_node_count: u32 = 11941; // Number of nodes in the BVH
+const bvh_node_count: u32 = 17139; // Number of nodes in the BVH
 const bvh_max_depth: u32 = 20; // Max depth of the BVH
 const max_bounce_count: u32 = 10; // Max bounces per ray
 const rays_per_pixel: u32 = 10; // Number of rays per pixel
