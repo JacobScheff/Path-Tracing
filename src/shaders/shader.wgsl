@@ -278,7 +278,7 @@ fn ray_triangle(ray: Ray, triangle: array<vec3<f32>, 3>) -> HitInfo {
         hit_info.color = vec3<f32>(0.25, 1.0, 0.25);
         hit_info.emission_color = vec3<f32>(0.0, 0.0, 0.0);
         hit_info.emission_strength = 0.0;
-        hit_info.smoothness = 0.75;
+        hit_info.smoothness = 0.8;
     }
 
     return hit_info;
