@@ -1,4 +1,4 @@
-use renderer_backend::pipeline_builder::PipelineBuilder;
+use renderer_backend::{bind_group_layout_generator, compute_pipeline_builder::ComputePipelineBuilder, pipeline_builder::PipelineBuilder};
 mod renderer_backend;
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
@@ -25,6 +25,7 @@ struct State<'a> {
     size: PhysicalSize<u32>,
     window: &'a Window,
     render_pipeline: wgpu::RenderPipeline,
+    compute_pipeline: wgpu::ComputePipeline,
     bind_group: wgpu::BindGroup,
     frame_count: u32,
     frame_count_buffer: wgpu::Buffer,
@@ -190,89 +191,18 @@ impl<'a> State<'a> {
         };
         surface.configure(&device, &config);
 
-        // Create bind group layout
-        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Storage { read_only: true },
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Storage { read_only: true },
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 2,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Storage { read_only: false },
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 3,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Storage { read_only: true },
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 4,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Storage { read_only: true },
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 5,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Storage { read_only: true },
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 6,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Storage { read_only: true },
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                },
-            ],
-            label: Some("Sphere Bind Group Layout"),
-        });
+        // Pass bind group layout to render pipeline builder
+        let mut render_pipeline_builder = PipelineBuilder::new();
+        render_pipeline_builder.set_shader_module("shaders/shader.wgsl", "vs_main", "fs_main");
+        render_pipeline_builder.set_pixel_format(config.format);
+        render_pipeline_builder.set_bind_group_layout(bind_group_layout_generator::get_bind_group_layout(&device));
+        let render_pipeline = render_pipeline_builder.build_pipeline(&device);
 
-        // Pass bind group layout to pipeline builder
-        let mut pipeline_builder = PipelineBuilder::new();
-        pipeline_builder.set_shader_module("shaders/shader.wgsl", "vs_main", "fs_main");
-        pipeline_builder.set_pixel_format(config.format);
-        pipeline_builder.set_bind_group_layout(bind_group_layout);
-        let render_pipeline = pipeline_builder.build_pipeline(&device);
+        // Pass bind group layout to compute pipeline builder
+        let mut compute_pipeline_builder = ComputePipelineBuilder::new();
+        compute_pipeline_builder.set_shader_module("shaders/shader.wgsl", "main");
+        compute_pipeline_builder.set_bind_group_layout(bind_group_layout_generator::get_bind_group_layout(&device));
+        let compute_pipeline = compute_pipeline_builder.build_pipeline(&device);
 
         // Create a temporary bind group
         let temp_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -414,6 +344,7 @@ impl<'a> State<'a> {
             config,
             size,
             render_pipeline,
+            compute_pipeline,
             bind_group: temp_bind_group,
             frame_count: 0,
             frame_count_buffer,
