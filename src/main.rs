@@ -152,18 +152,6 @@ impl<'a> State<'a> {
         let instance = wgpu::Instance::new(instance_descriptor);
         let surface = instance.create_surface(window).unwrap();
 
-        // let adapter_descriptor = wgpu::RequestAdapterOptionsBase {
-        //     power_preference: wgpu::PowerPreference::default(),
-        //     compatible_surface: Some(&surface),
-        //     force_fallback_adapter: false,
-        // };
-        // let adapter = instance.request_adapter(&adapter_descriptor).await.unwrap();
-
-        // // Print all the available adapters
-        // for adapter in instance.enumerate_adapters(wgpu::Backends::all()) {
-        //     println!("{:?}", adapter.get_info());
-        // }
-
         // Pick the second adapter (NVIDIA 3060 RTX)
         let adapter = instance
             .enumerate_adapters(wgpu::Backends::all())
