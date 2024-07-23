@@ -13,6 +13,11 @@ use winit::{
 };
 
 const SCREEN_SIZE: (u32, u32) = (1200, 600);
+const WORKGROUP_SIZE: u32 = 8;
+const DISPATCH_SIZE: (u32, u32) = (
+    SCREEN_SIZE.0 / WORKGROUP_SIZE,
+    SCREEN_SIZE.1 / WORKGROUP_SIZE,
+);
 const TIME_BETWEEN_FRAMES: u64 = 10;
 const CAMERA_SPEED: f32 = 1.0;
 const CAMERA_ROT_SPEED: f32 = 1.0;

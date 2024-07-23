@@ -28,6 +28,11 @@ const bvh_max_depth: u32 = 27; // Max depth of the BVH
 const max_bounce_count: u32 = 10; // Max bounces per ray
 const rays_per_pixel: u32 = 20; // Number of rays per pixel
 const screen_size: vec2<f32> = vec2<f32>(1200.0, 600.0); // Size of the screen
+const WORKGROUP_SIZE: u32 = 8;
+const DISPATCH_SIZE: vec2<u32> = vec2<u32>(
+    u32(screen_size.x) / u32(WORKGROUP_SIZE),
+    u32(screen_size.y) / u32(WORKGROUP_SIZE),
+);
 const fov: f32 = 60.0 * 3.14159 / 180.0; // Field of view in radians
 const aspect_ratio: f32 = screen_size.x / screen_size.y; // Aspect ratio of the screen
 
@@ -48,7 +53,7 @@ const sun_intensity: f32 = 3;
 const sun_focus: f32 = 200;
 const use_environment_lighting: bool = true;
 
-@compute @workgroup_size(u32(screen_size.x), u32(screen_size.y), 1) 
+@compute @workgroup_size(WORKGROUP_SIZE, WORKGROUP_SIZE, 1)
 fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     // Convert global_id to vec2<f32>
     let pos: vec2<f32> = vec2<f32>(f32(global_id.x), f32(global_id.y));
