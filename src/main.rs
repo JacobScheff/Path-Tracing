@@ -1,7 +1,4 @@
-use renderer_backend::{
-    bind_group_layout_generator, compute_pipeline_builder::ComputePipelineBuilder,
-    pipeline_builder::PipelineBuilder,
-};
+use renderer_backend::pipeline_builder::PipelineBuilder;
 mod renderer_backend;
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
@@ -16,11 +13,6 @@ use winit::{
 };
 
 const SCREEN_SIZE: (u32, u32) = (1200, 600);
-const WORKGROUP_SIZE: u32 = 8;
-const DISPATCH_SIZE: (u32, u32) = (
-    SCREEN_SIZE.0 / WORKGROUP_SIZE,
-    SCREEN_SIZE.1 / WORKGROUP_SIZE,
-);
 const TIME_BETWEEN_FRAMES: u64 = 10;
 const CAMERA_SPEED: f32 = 1.0;
 const CAMERA_ROT_SPEED: f32 = 1.0;
@@ -33,9 +25,7 @@ struct State<'a> {
     size: PhysicalSize<u32>,
     window: &'a Window,
     render_pipeline: wgpu::RenderPipeline,
-    compute_pipeline: wgpu::ComputePipeline,
-    render_bind_group: wgpu::BindGroup,
-    compute_bind_group: wgpu::BindGroup,
+    bind_group: wgpu::BindGroup,
     frame_count: u32,
     frame_count_buffer: wgpu::Buffer,
     frame_data_buffer: wgpu::Buffer,
@@ -162,6 +152,18 @@ impl<'a> State<'a> {
         let instance = wgpu::Instance::new(instance_descriptor);
         let surface = instance.create_surface(window).unwrap();
 
+        // let adapter_descriptor = wgpu::RequestAdapterOptionsBase {
+        //     power_preference: wgpu::PowerPreference::default(),
+        //     compatible_surface: Some(&surface),
+        //     force_fallback_adapter: false,
+        // };
+        // let adapter = instance.request_adapter(&adapter_descriptor).await.unwrap();
+
+        // // Print all the available adapters
+        // for adapter in instance.enumerate_adapters(wgpu::Backends::all()) {
+        //     println!("{:?}", adapter.get_info());
+        // }
+
         // Pick the second adapter (NVIDIA 3060 RTX)
         let adapter = instance
             .enumerate_adapters(wgpu::Backends::all())
@@ -200,38 +202,96 @@ impl<'a> State<'a> {
         };
         surface.configure(&device, &config);
 
-        // Pass bind group layout to render pipeline builder
-        let mut render_pipeline_builder = PipelineBuilder::new();
-        render_pipeline_builder.set_shader_module("shaders/shader.wgsl", "vs_main", "fs_main");
-        render_pipeline_builder.set_pixel_format(config.format);
-        render_pipeline_builder.set_bind_group_layout(
-            bind_group_layout_generator::get_bind_group_layout(&device, false),
-        );
-        let render_pipeline = render_pipeline_builder.build_pipeline(&device);
-
-        // Pass bind group layout to compute pipeline builder
-        let mut compute_pipeline_builder = ComputePipelineBuilder::new();
-        compute_pipeline_builder.set_shader_module("shaders/shader.wgsl", "main");
-        compute_pipeline_builder.set_bind_group_layout(
-            bind_group_layout_generator::get_bind_group_layout(&device, true),
-        );
-        let compute_pipeline = compute_pipeline_builder.build_pipeline(&device);
-
-        // Create temporary bind groups
-        let temp_render_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Temporary Render Bind Group"),
-            layout: &device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                entries: &[],
-                label: Some("Temporary Render Bind Group Layout"),
-            }),
-            entries: &[],
+        // Create bind group layout
+        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 2,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: false },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 3,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 4,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 5,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 6,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
+            ],
+            label: Some("Sphere Bind Group Layout"),
         });
 
-        let temp_compute_render_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Temporary Compute Bind Group"),
+        // Pass bind group layout to pipeline builder
+        let mut pipeline_builder = PipelineBuilder::new();
+        pipeline_builder.set_shader_module("shaders/shader.wgsl", "vs_main", "fs_main");
+        pipeline_builder.set_pixel_format(config.format);
+        pipeline_builder.set_bind_group_layout(bind_group_layout);
+        let render_pipeline = pipeline_builder.build_pipeline(&device);
+
+        // Create a temporary bind group
+        let temp_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("Temporary Bind Group"),
             layout: &device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 entries: &[],
-                label: Some("Temporary Compute Bind Group Layout"),
+                label: Some("Temporary Bind Group Layout"),
             }),
             entries: &[],
         });
@@ -366,9 +426,7 @@ impl<'a> State<'a> {
             config,
             size,
             render_pipeline,
-            compute_pipeline,
-            render_bind_group: temp_render_bind_group,
-            compute_bind_group: temp_compute_render_bind_group,
+            bind_group: temp_bind_group,
             frame_count: 0,
             frame_count_buffer,
             frame_data_buffer,
@@ -415,28 +473,6 @@ impl<'a> State<'a> {
             bytemuck::cast_slice(&self.camera_rotation),
         );
 
-        // Dispatch the compute shader
-        let mut encoder = self
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Compute Encoder"),
-            });
-        {
-            let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
-                label: Some("Compute Pass"),
-                timestamp_writes: None,
-            });
-            compute_pass.set_pipeline(&self.compute_pipeline); // Assuming you have a compute pipeline
-            compute_pass.set_bind_group(0, &self.compute_bind_group, &[]);
-            compute_pass.dispatch_workgroups(
-                DISPATCH_SIZE.0,
-                DISPATCH_SIZE.1,
-                1,
-            );
-        }
-
-        self.queue.submit(std::iter::once(encoder.finish()));
-
         let drawable = self.surface.get_current_texture()?;
         let image_view_descriptor = wgpu::TextureViewDescriptor::default();
         let image_view = drawable.texture.create_view(&image_view_descriptor);
@@ -472,7 +508,7 @@ impl<'a> State<'a> {
         {
             let mut render_pass = command_encoder.begin_render_pass(&render_pass_descriptor);
             render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.set_bind_group(0, &self.render_bind_group, &[]); // Access using self
+            render_pass.set_bind_group(0, &self.bind_group, &[]); // Access using self
             render_pass.draw(0..3, 0..1); // Draw the first triangle
             render_pass.draw(3..6, 0..1); // Draw the second triangle
         }
@@ -521,49 +557,88 @@ async fn run() {
 
     let mut state = State::new(&window).await;
 
-    // Create bind group layouts
-    let render_bind_group_layout =
-        bind_group_layout_generator::get_bind_group_layout(&state.device, false);
-    state.render_bind_group = state.device.create_bind_group(&wgpu::BindGroupDescriptor {
+    // Create bind group layout
+    let bind_group_layout =
+        state
+            .device
+            .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Storage { read_only: true },
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Storage { read_only: true },
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Storage { read_only: false },
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 3,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Storage { read_only: true },
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 4,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Storage { read_only: true },
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 5,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Storage { read_only: true },
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 6,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Storage { read_only: true },
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                ],
+                label: Some("Sphere Bind Group Layout"),
+            });
+    state.bind_group = state.device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("Sphere Bind Group"),
-        layout: &render_bind_group_layout,
-        entries: &[
-            wgpu::BindGroupEntry {
-                binding: 0,
-                resource: state.sphere_buffer.as_entire_binding(),
-            },
-            wgpu::BindGroupEntry {
-                binding: 1,
-                resource: state.frame_count_buffer.as_entire_binding(),
-            },
-            wgpu::BindGroupEntry {
-                binding: 2,
-                resource: state.frame_data_buffer.as_entire_binding(),
-            },
-            wgpu::BindGroupEntry {
-                binding: 3,
-                resource: state.camera_position_buffer.as_entire_binding(),
-            },
-            wgpu::BindGroupEntry {
-                binding: 4,
-                resource: state.camera_rotation_buffer.as_entire_binding(),
-            },
-            wgpu::BindGroupEntry {
-                binding: 5,
-                resource: state.triangle_buffer.as_entire_binding(),
-            },
-            wgpu::BindGroupEntry {
-                binding: 6,
-                resource: state.bvh_buffer.as_entire_binding(),
-            },
-        ],
-    });
-
-    let compute_bind_group_layout =
-        bind_group_layout_generator::get_bind_group_layout(&state.device, true);
-    state.compute_bind_group = state.device.create_bind_group(&wgpu::BindGroupDescriptor {
-        label: Some("Sphere Bind Group"),
-        layout: &compute_bind_group_layout,
+        layout: &bind_group_layout,
         entries: &[
             wgpu::BindGroupEntry {
                 binding: 0,
@@ -597,17 +672,11 @@ async fn run() {
     });
 
     // Pass bind group layout to pipeline builder
-    let mut render_pipeline_builder = PipelineBuilder::new();
-    render_pipeline_builder.set_shader_module("shaders/shader.wgsl", "vs_main", "fs_main");
-    render_pipeline_builder.set_pixel_format(state.config.format);
-    render_pipeline_builder.set_bind_group_layout(render_bind_group_layout);
-    state.render_pipeline = render_pipeline_builder.build_pipeline(&state.device);
-
-    // Pass bind group layout to compute pipeline builder
-    let mut compute_pipeline_builder = ComputePipelineBuilder::new();
-    compute_pipeline_builder.set_shader_module("shaders/shader.wgsl", "main");
-    compute_pipeline_builder.set_bind_group_layout(compute_bind_group_layout);
-    state.compute_pipeline = compute_pipeline_builder.build_pipeline(&state.device);
+    let mut pipeline_builder = PipelineBuilder::new();
+    pipeline_builder.set_shader_module("shaders/shader.wgsl", "vs_main", "fs_main");
+    pipeline_builder.set_pixel_format(state.config.format);
+    pipeline_builder.set_bind_group_layout(bind_group_layout);
+    state.render_pipeline = pipeline_builder.build_pipeline(&state.device);
 
     event_loop
         .run(move |event, elwt| match event {

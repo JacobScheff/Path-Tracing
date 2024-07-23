@@ -28,11 +28,6 @@ const bvh_max_depth: u32 = 27; // Max depth of the BVH
 const max_bounce_count: u32 = 10; // Max bounces per ray
 const rays_per_pixel: u32 = 20; // Number of rays per pixel
 const screen_size: vec2<f32> = vec2<f32>(1200.0, 600.0); // Size of the screen
-const WORKGROUP_SIZE: u32 = 8;
-const DISPATCH_SIZE: vec2<u32> = vec2<u32>(
-    u32(screen_size.x) / u32(WORKGROUP_SIZE),
-    u32(screen_size.y) / u32(WORKGROUP_SIZE),
-);
 const fov: f32 = 60.0 * 3.14159 / 180.0; // Field of view in radians
 const aspect_ratio: f32 = screen_size.x / screen_size.y; // Aspect ratio of the screen
 
@@ -52,44 +47,6 @@ const sun_light_direction: vec3<f32> = vec3<f32>(0, -0.4, 0.5); // Not normalize
 const sun_intensity: f32 = 3;
 const sun_focus: f32 = 200;
 const use_environment_lighting: bool = true;
-
-@compute @workgroup_size(WORKGROUP_SIZE, WORKGROUP_SIZE, 1)
-fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
-    // Convert global_id to vec2<f32>
-    let pos: vec2<f32> = vec2<f32>(f32(global_id.x), f32(global_id.y));
-
-    // Calculate screen plane dimensions
-    let screen_width: f32 = tan(fov * 0.5) * 2.0;
-    let screen_height: f32 = screen_width / aspect_ratio;
-
-    // Map pixel coordinates to screen plane coordinates
-    let u: f32 = (2.0 * pos.x / screen_size.x - 1.0) * screen_width / 2.0;
-    let v: f32 = (1.0 - 2.0 * pos.y / screen_size.y) * screen_height / 2.0;
-    let pixel_index: u32 = u32(pos.x + pos.y * screen_size.x);
-
-    // Create ray and ray direction vector
-    var ray_direction: vec3<f32> = vec3<f32>(u, v, -1.0);
-    ray_direction = normalize(ray_direction);
-
-    // Rotate ray direction vector
-    ray_direction = rotate_vector(ray_direction, camera_rotation);
-
-    // Create ray
-    var ray: Ray;
-    ray.origin = camera_position;
-    ray.dir = ray_direction;
-
-    // Calculate pixel color
-    var pixel_color: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
-    for (var i: u32 = 0u; i < rays_per_pixel; i = i + 1u) {
-        pixel_color += trace(ray, pixel_index + i * 248135);
-    }
-    pixel_color /= f32(rays_per_pixel);
-
-    let weight: f32 = 1.0 / f32(frame_count + 1); // Might need to be + 2 since frame_count starts at 0
-    let weighted_average: vec3<f32> = frame_data[i32(global_id.y)][i32(global_id.x)] * (1.0 - weight) + pixel_color * weight;
-    frame_data[i32(global_id.y)][i32(global_id.x)] = weighted_average;
-}
 
 @vertex
 fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
@@ -115,7 +72,35 @@ fn vs_main(@builtin(vertex_index) i: u32) -> VertexOutput {
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    return vec4<f32>(frame_data[i32(in.pos.y)][i32(in.pos.x)], 1.0);
+    // Map pixel coordinates to screen plane coordinates
+    let u: f32 = (2.0 * in.pos.x / screen_size.x - 1.0) * in.screen_width / 2.0;
+    let v: f32 = (1.0 - 2.0 * in.pos.y / screen_size.y) * in.screen_height / 2.0;
+    let pixel_index: u32 = u32(in.pos.x + in.pos.y * screen_size.x);
+
+    // Create ray and ray direction vector
+    var ray_direction: vec3<f32> = vec3<f32>(u, v, -1.0);
+    ray_direction = normalize(ray_direction);
+
+    // Rotate ray direction vector
+    ray_direction = rotate_vector(ray_direction, camera_rotation);
+
+    // Create ray
+    var ray: Ray;
+    ray.origin = camera_position;
+    ray.dir = ray_direction;
+
+    // Calculate pixel color
+    var pixel_color: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
+    for (var i: u32 = 0u; i < rays_per_pixel; i = i + 1u) {
+        pixel_color += trace(ray, pixel_index + i * 248135);
+    }
+    pixel_color /= f32(rays_per_pixel);
+
+    let weight: f32 = 1.0 / f32(frame_count + 1); // Might need to be + 2 since frame_count starts at 0
+    let weighted_average: vec3<f32> = frame_data[i32(in.pos.y)][i32(in.pos.x)] * (1.0 - weight) + pixel_color * weight;
+    frame_data[i32(in.pos.y)][i32(in.pos.x)] = weighted_average;
+    
+    return vec4<f32>(weighted_average, 1.0);
 }
 
 fn trace(ray_in: Ray, seed: u32) -> vec3<f32> {
