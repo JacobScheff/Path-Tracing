@@ -26,7 +26,8 @@ struct State<'a> {
     window: &'a Window,
     render_pipeline: wgpu::RenderPipeline,
     compute_pipeline: wgpu::ComputePipeline,
-    bind_group: wgpu::BindGroup,
+    render_bind_group: wgpu::BindGroup,
+    compute_bind_group: wgpu::BindGroup,
     frame_count: u32,
     frame_count_buffer: wgpu::Buffer,
     frame_data_buffer: wgpu::Buffer,
@@ -204,12 +205,21 @@ impl<'a> State<'a> {
         compute_pipeline_builder.set_bind_group_layout(bind_group_layout_generator::get_bind_group_layout(&device));
         let compute_pipeline = compute_pipeline_builder.build_pipeline(&device);
 
-        // Create a temporary bind group
-        let temp_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Temporary Bind Group"),
+        // Create temporary bind groups
+        let temp_render_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("Temporary Render Bind Group"),
             layout: &device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 entries: &[],
-                label: Some("Temporary Bind Group Layout"),
+                label: Some("Temporary Render Bind Group Layout"),
+            }),
+            entries: &[],
+        });
+
+        let temp_compute_render_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("Temporary Compute Bind Group"),
+            layout: &device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[],
+                label: Some("Temporary Compute Bind Group Layout"),
             }),
             entries: &[],
         });
@@ -345,7 +355,8 @@ impl<'a> State<'a> {
             size,
             render_pipeline,
             compute_pipeline,
-            bind_group: temp_bind_group,
+            render_bind_group: temp_render_bind_group,
+            compute_bind_group: temp_compute_render_bind_group,
             frame_count: 0,
             frame_count_buffer,
             frame_data_buffer,
@@ -427,7 +438,7 @@ impl<'a> State<'a> {
         {
             let mut render_pass = command_encoder.begin_render_pass(&render_pass_descriptor);
             render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.set_bind_group(0, &self.bind_group, &[]); // Access using self
+            render_pass.set_bind_group(0, &self.render_bind_group, &[]); // Access using self
             render_pass.draw(0..3, 0..1); // Draw the first triangle
             render_pass.draw(3..6, 0..1); // Draw the second triangle
         }
@@ -476,11 +487,47 @@ async fn run() {
 
     let mut state = State::new(&window).await;
 
-    // Create bind group layout
-    let bind_group_layout = bind_group_layout_generator::get_bind_group_layout(&state.device);
-    state.bind_group = state.device.create_bind_group(&wgpu::BindGroupDescriptor {
+    // Create bind group layouts
+    let render_bind_group_layout = bind_group_layout_generator::get_bind_group_layout(&state.device);
+    state.render_bind_group = state.device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("Sphere Bind Group"),
-        layout: &bind_group_layout,
+        layout: &render_bind_group_layout,
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: state.sphere_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: state.frame_count_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 2,
+                resource: state.frame_data_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 3,
+                resource: state.camera_position_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 4,
+                resource: state.camera_rotation_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 5,
+                resource: state.triangle_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 6,
+                resource: state.bvh_buffer.as_entire_binding(),
+            },
+        ],
+    });
+
+    let compute_bind_group_layout = bind_group_layout_generator::get_bind_group_layout(&state.device);
+    state.compute_bind_group = state.device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("Sphere Bind Group"),
+        layout: &compute_bind_group_layout,
         entries: &[
             wgpu::BindGroupEntry {
                 binding: 0,
@@ -514,11 +561,17 @@ async fn run() {
     });
 
     // Pass bind group layout to pipeline builder
-    let mut pipeline_builder = PipelineBuilder::new();
-    pipeline_builder.set_shader_module("shaders/shader.wgsl", "vs_main", "fs_main");
-    pipeline_builder.set_pixel_format(state.config.format);
-    pipeline_builder.set_bind_group_layout(bind_group_layout);
-    state.render_pipeline = pipeline_builder.build_pipeline(&state.device);
+    let mut render_pipeline_builder = PipelineBuilder::new();
+    render_pipeline_builder.set_shader_module("shaders/shader.wgsl", "vs_main", "fs_main");
+    render_pipeline_builder.set_pixel_format(state.config.format);
+    render_pipeline_builder.set_bind_group_layout(render_bind_group_layout);
+    state.render_pipeline = render_pipeline_builder.build_pipeline(&state.device);
+
+    // Pass bind group layout to compute pipeline builder
+    let mut compute_pipeline_builder = ComputePipelineBuilder::new();
+    compute_pipeline_builder.set_shader_module("shaders/shader.wgsl", "main");
+    compute_pipeline_builder.set_bind_group_layout(compute_bind_group_layout);
+    state.compute_pipeline = compute_pipeline_builder.build_pipeline(&state.device);
 
     event_loop
         .run(move |event, elwt| match event {
