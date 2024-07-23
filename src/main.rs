@@ -1,4 +1,7 @@
-use renderer_backend::{bind_group_layout_generator, compute_pipeline_builder::ComputePipelineBuilder, pipeline_builder::PipelineBuilder};
+use renderer_backend::{
+    bind_group_layout_generator, compute_pipeline_builder::ComputePipelineBuilder,
+    pipeline_builder::PipelineBuilder,
+};
 mod renderer_backend;
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
@@ -201,13 +204,17 @@ impl<'a> State<'a> {
         let mut render_pipeline_builder = PipelineBuilder::new();
         render_pipeline_builder.set_shader_module("shaders/shader.wgsl", "vs_main", "fs_main");
         render_pipeline_builder.set_pixel_format(config.format);
-        render_pipeline_builder.set_bind_group_layout(bind_group_layout_generator::get_bind_group_layout(&device, false));
+        render_pipeline_builder.set_bind_group_layout(
+            bind_group_layout_generator::get_bind_group_layout(&device, false),
+        );
         let render_pipeline = render_pipeline_builder.build_pipeline(&device);
 
         // Pass bind group layout to compute pipeline builder
         let mut compute_pipeline_builder = ComputePipelineBuilder::new();
         compute_pipeline_builder.set_shader_module("shaders/shader.wgsl", "main");
-        compute_pipeline_builder.set_bind_group_layout(bind_group_layout_generator::get_bind_group_layout(&device, true));
+        compute_pipeline_builder.set_bind_group_layout(
+            bind_group_layout_generator::get_bind_group_layout(&device, true),
+        );
         let compute_pipeline = compute_pipeline_builder.build_pipeline(&device);
 
         // Create temporary bind groups
@@ -408,6 +415,28 @@ impl<'a> State<'a> {
             bytemuck::cast_slice(&self.camera_rotation),
         );
 
+        // Dispatch the compute shader
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("Compute Encoder"),
+            });
+        {
+            let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                label: Some("Compute Pass"),
+                timestamp_writes: None,
+            });
+            compute_pass.set_pipeline(&self.compute_pipeline); // Assuming you have a compute pipeline
+            compute_pass.set_bind_group(0, &self.compute_bind_group, &[]);
+            compute_pass.dispatch_workgroups(
+                DISPATCH_SIZE.0,
+                DISPATCH_SIZE.1,
+                1,
+            );
+        }
+
+        self.queue.submit(std::iter::once(encoder.finish()));
+
         let drawable = self.surface.get_current_texture()?;
         let image_view_descriptor = wgpu::TextureViewDescriptor::default();
         let image_view = drawable.texture.create_view(&image_view_descriptor);
@@ -493,7 +522,8 @@ async fn run() {
     let mut state = State::new(&window).await;
 
     // Create bind group layouts
-    let render_bind_group_layout = bind_group_layout_generator::get_bind_group_layout(&state.device, false);
+    let render_bind_group_layout =
+        bind_group_layout_generator::get_bind_group_layout(&state.device, false);
     state.render_bind_group = state.device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("Sphere Bind Group"),
         layout: &render_bind_group_layout,
@@ -529,7 +559,8 @@ async fn run() {
         ],
     });
 
-    let compute_bind_group_layout = bind_group_layout_generator::get_bind_group_layout(&state.device, true);
+    let compute_bind_group_layout =
+        bind_group_layout_generator::get_bind_group_layout(&state.device, true);
     state.compute_bind_group = state.device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("Sphere Bind Group"),
         layout: &compute_bind_group_layout,
