@@ -196,13 +196,13 @@ impl<'a> State<'a> {
         let mut render_pipeline_builder = PipelineBuilder::new();
         render_pipeline_builder.set_shader_module("shaders/shader.wgsl", "vs_main", "fs_main");
         render_pipeline_builder.set_pixel_format(config.format);
-        render_pipeline_builder.set_bind_group_layout(bind_group_layout_generator::get_bind_group_layout(&device));
+        render_pipeline_builder.set_bind_group_layout(bind_group_layout_generator::get_bind_group_layout(&device, false));
         let render_pipeline = render_pipeline_builder.build_pipeline(&device);
 
         // Pass bind group layout to compute pipeline builder
         let mut compute_pipeline_builder = ComputePipelineBuilder::new();
         compute_pipeline_builder.set_shader_module("shaders/shader.wgsl", "main");
-        compute_pipeline_builder.set_bind_group_layout(bind_group_layout_generator::get_bind_group_layout(&device));
+        compute_pipeline_builder.set_bind_group_layout(bind_group_layout_generator::get_bind_group_layout(&device, true));
         let compute_pipeline = compute_pipeline_builder.build_pipeline(&device);
 
         // Create temporary bind groups
@@ -488,7 +488,7 @@ async fn run() {
     let mut state = State::new(&window).await;
 
     // Create bind group layouts
-    let render_bind_group_layout = bind_group_layout_generator::get_bind_group_layout(&state.device);
+    let render_bind_group_layout = bind_group_layout_generator::get_bind_group_layout(&state.device, false);
     state.render_bind_group = state.device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("Sphere Bind Group"),
         layout: &render_bind_group_layout,
@@ -524,7 +524,7 @@ async fn run() {
         ],
     });
 
-    let compute_bind_group_layout = bind_group_layout_generator::get_bind_group_layout(&state.device);
+    let compute_bind_group_layout = bind_group_layout_generator::get_bind_group_layout(&state.device, true);
     state.compute_bind_group = state.device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("Sphere Bind Group"),
         layout: &compute_bind_group_layout,
