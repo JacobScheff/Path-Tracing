@@ -1,8 +1,7 @@
 use renderer_backend::pipeline_builder::PipelineBuilder;
 mod renderer_backend;
 use wgpu::{
-    util::{BufferInitDescriptor, DeviceExt},
-    BufferUsages,
+    core::device::global, util::{BufferInitDescriptor, DeviceExt}, BufferUsages
 };
 use winit::{
     dpi::PhysicalSize,
@@ -109,23 +108,10 @@ impl<'a> State<'a> {
         self.camera_position[2] += global_movement[2];
 
         // Convert local to global rotation
-        let current_rotation_quat = cgmath::Quaternion::from(cgmath::Euler::new(
-            cgmath::Deg(self.camera_rotation[0]),
-            cgmath::Deg(self.camera_rotation[1]),
-            cgmath::Deg(self.camera_rotation[2]),
-        ));
-
-        let local_rotation_quat = cgmath::Quaternion::from(cgmath::Euler::new(
-            cgmath::Deg(local_rotation[0]),
-            cgmath::Deg(local_rotation[1]),
-            cgmath::Deg(local_rotation[2]),
-        ));
-
-        let new_rotation_quat = current_rotation_quat * local_rotation_quat;
-
-        let new_rotation_euler: cgmath::Euler<cgmath::Rad<f32>> = new_rotation_quat.into();
-
-        self.camera_rotation = [new_rotation_euler.x.0.to_degrees(), new_rotation_euler.y.0.to_degrees(), new_rotation_euler.z.0.to_degrees()];
+        let global_rotation = self.rotate_vector(local_rotation, self.camera_rotation);
+        self.camera_rotation[0] += global_rotation[0];
+        self.camera_rotation[1] += global_rotation[1];
+        self.camera_rotation[2] += global_rotation[2];
     }
 
     fn rotate_vector(&mut self, vector: [f32; 3], rotation: [f32; 3]) -> [f32; 3] {
@@ -522,11 +508,10 @@ impl<'a> State<'a> {
 
         if self.tick % 10 == 0 {
             let elapsed_time = start_time.elapsed();
-            // println!(
-            //     "fps: {}",
-            //     1.0 / elapsed_time.as_micros() as f32 * 1000.0 * 1000.0
-            // );
-            println!("{:?}", self.camera_rotation);
+            println!(
+                "fps: {}",
+                1.0 / elapsed_time.as_micros() as f32 * 1000.0 * 1000.0
+            );
         }
 
         self.tick += 1;
