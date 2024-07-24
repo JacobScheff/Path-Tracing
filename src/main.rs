@@ -11,6 +11,7 @@ use winit::{
     keyboard::{KeyCode, PhysicalKey},
     window::{Window, WindowBuilder},
 };
+use cgmath::prelude::*;
 
 const SCREEN_SIZE: (u32, u32) = (1200, 600);
 const TIME_BETWEEN_FRAMES: u64 = 10;
@@ -101,18 +102,30 @@ impl<'a> State<'a> {
             local_rotation[2] -= CAMERA_ROT_SPEED;
         }
 
-        // Convert local to global
+        // Convert local to global movement
         let global_movement = self.rotate_vector(local_movement, self.camera_rotation);
-        let global_rotation = self.rotate_vector(local_rotation, self.camera_rotation);
-
-        // Update new camera position and rotation
         self.camera_position[0] += global_movement[0];
         self.camera_position[1] += global_movement[1];
         self.camera_position[2] += global_movement[2];
 
-        self.camera_rotation[0] += global_rotation[0];
-        self.camera_rotation[1] += global_rotation[1];
-        self.camera_rotation[2] += global_rotation[2];
+        // Convert local to global rotation
+        let current_rotation_quat = cgmath::Quaternion::from(cgmath::Euler::new(
+            cgmath::Deg(self.camera_rotation[0]),
+            cgmath::Deg(self.camera_rotation[1]),
+            cgmath::Deg(self.camera_rotation[2]),
+        ));
+
+        let local_rotation_quat = cgmath::Quaternion::from(cgmath::Euler::new(
+            cgmath::Deg(local_rotation[0]),
+            cgmath::Deg(local_rotation[1]),
+            cgmath::Deg(local_rotation[2]),
+        ));
+
+        let new_rotation_quat = current_rotation_quat * local_rotation_quat;
+
+        let new_rotation_euler: cgmath::Euler<cgmath::Rad<f32>> = new_rotation_quat.into();
+
+        self.camera_rotation = [new_rotation_euler.x.0.to_degrees(), new_rotation_euler.y.0.to_degrees(), new_rotation_euler.z.0.to_degrees()];
     }
 
     fn rotate_vector(&mut self, vector: [f32; 3], rotation: [f32; 3]) -> [f32; 3] {
@@ -151,18 +164,6 @@ impl<'a> State<'a> {
         };
         let instance = wgpu::Instance::new(instance_descriptor);
         let surface = instance.create_surface(window).unwrap();
-
-        // let adapter_descriptor = wgpu::RequestAdapterOptionsBase {
-        //     power_preference: wgpu::PowerPreference::default(),
-        //     compatible_surface: Some(&surface),
-        //     force_fallback_adapter: false,
-        // };
-        // let adapter = instance.request_adapter(&adapter_descriptor).await.unwrap();
-
-        // // Print all the available adapters
-        // for adapter in instance.enumerate_adapters(wgpu::Backends::all()) {
-        //     println!("{:?}", adapter.get_info());
-        // }
 
         // Pick the second adapter (NVIDIA 3060 RTX)
         let adapter = instance
@@ -521,10 +522,11 @@ impl<'a> State<'a> {
 
         if self.tick % 10 == 0 {
             let elapsed_time = start_time.elapsed();
-            println!(
-                "fps: {}",
-                1.0 / elapsed_time.as_micros() as f32 * 1000.0 * 1000.0
-            );
+            // println!(
+            //     "fps: {}",
+            //     1.0 / elapsed_time.as_micros() as f32 * 1000.0 * 1000.0
+            // );
+            println!("{:?}", self.camera_rotation);
         }
 
         self.tick += 1;
