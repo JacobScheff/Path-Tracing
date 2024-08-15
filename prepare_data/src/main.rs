@@ -222,6 +222,7 @@ fn main() {
 
     println!("Done!");
     println!("Number of nodes: {}", all_nodes.len());
+    println!("Number of triangles: {}", all_triangles.len());
     println!("Max depth: {}", max_depth);
     println!("Time taken: {:?}", start_time.elapsed());
 
