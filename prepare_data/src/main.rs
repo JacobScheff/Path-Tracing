@@ -27,7 +27,7 @@ fn node_cost(size: Vector, num_triangles: f32) -> f32 {
 }
 
 fn choose_split(node: Node, all_triangles: &mut Vec<Triangle>) -> (i32, f32, f32) {
-    const num_tests_per_axis: i32 = 5;
+    const num_tests_per_axis: i32 = 10;
     let mut best_cost: f32 = std::f32::INFINITY;
     let mut best_pos: f32 = 0.0;
     let mut best_axis: i32 = 0;
@@ -170,7 +170,7 @@ fn main() {
 
     // Build BVH
     println!("Building BVH...");
-    let max_depth: i32 = 27;
+    let max_depth: i32 = 32;
     BVH(&mut all_nodes, &mut all_triangles, max_depth);
 
     // Format data for writing: min, max, triangle_index, triangle_count, child_index
@@ -224,4 +224,26 @@ fn main() {
     println!("Number of nodes: {}", all_nodes.len());
     println!("Max depth: {}", max_depth);
     println!("Time taken: {:?}", start_time.elapsed());
+
+    // Calculate stats
+    println!("\nStats:");
+    let mut min_triangles: i32 = std::i32::MAX;
+    let mut max_triangles: i32 = std::i32::MIN;
+    let mut total_triangles: i32 = 0;
+    for i in 0..all_nodes.len() {
+        if all_nodes[i].child_index != 0 {
+            continue;
+        }
+        if all_nodes[i].triangle_count < min_triangles {
+            min_triangles = all_nodes[i].triangle_count;
+        }
+        if all_nodes[i].triangle_count > max_triangles {
+            max_triangles = all_nodes[i].triangle_count;
+        }
+        total_triangles += all_nodes[i].triangle_count;
+    }
+    let average_triangles: f32 = total_triangles as f32 / all_nodes.len() as f32;
+    println!("Min triangles in node: {}", min_triangles);
+    println!("Max triangles in node: {}", max_triangles);
+    println!("Average triangles in node: {}", average_triangles);
 }
