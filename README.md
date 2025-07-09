@@ -11,3 +11,8 @@ This is a simple path tracer that can render one or more spheres and one complex
 7. Modify the file names being read in main.rs, and add or remove any desired spheres
 8. In shader.wgsl, update any necessary information at the top of the file, and update the material information for the complex object in the ray_triangle() function
 9. Run `cargo run --release`
+
+## Example Scenes
+![Dragon With Red Light](https://github.com/Snowplou/Path-Tracing/blob/main/public/ReadMe1.png?raw=true)
+![Dragon With Red Light, Alternate View](https://github.com/Snowplou/Path-Tracing/blob/main/public/ReadMe2.png?raw=true)
+![Blue Reflective Teapot](https://github.com/Snowplou/Path-Tracing/blob/main/public/ReadMe3.png?raw=true)
