@@ -20,11 +20,16 @@ struct Ray {
     dir: vec3<f32>,
 };
 
+// --- Sphere Information ---
 const sphere_count: u32 = 1; // Number of spheres in the scene
-const nums_per_sphere: u32 = 12; // Number of values stored for every sphere
-const triangle_count: u32 = 871306; // Number of triangles in the scene
-const bvh_node_count: u32 = 1723873; // Number of nodes in the BVH
-const bvh_max_depth: u32 = 32; // Max depth of the BVH
+const nums_per_sphere: u32 = 12; // Number of values stored for every sphere --- Should remain constant as long as there are no significant changes to the sphere data structure ---
+
+// --- BVH Information ---
+const triangle_count: u32 = 15704; // Number of triangles in the scene
+const bvh_node_count: u32 = 30661; // Number of nodes in the BVH
+const bvh_max_depth: u32 = 16; // Max depth of the BVH
+
+// --- Rendering Parameters ---
 const max_bounce_count: u32 = 10; // Max bounces per ray
 const rays_per_pixel: u32 = 20; // Number of rays per pixel
 const screen_size: vec2<f32> = vec2<f32>(1200.0, 600.0); // Size of the screen
@@ -275,10 +280,10 @@ fn ray_triangle(ray: Ray, triangle: array<vec3<f32>, 3>) -> HitInfo {
         hit_info.distance = dst;
         hit_info.position = ray.origin + ray.dir * dst;
         hit_info.normal = normalize(normal_vector);
-        hit_info.color = vec3<f32>(0.25, 1.0, 0.25);
+        hit_info.color = vec3<f32>(0.65, 0.65, 1.0);
         hit_info.emission_color = vec3<f32>(0.0, 0.0, 0.0);
         hit_info.emission_strength = 0.0;
-        hit_info.smoothness = 0.8;
+        hit_info.smoothness = 0.9;
     }
 
     return hit_info;

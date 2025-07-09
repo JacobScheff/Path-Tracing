@@ -7,6 +7,10 @@ use bounding_box::BoundingBox;
 mod node;
 use node::Node;
 
+const input_file_name: &str = "../objects/teapot.bin";
+const output_bvh_file_name: &str = "../objects/teapot_bvh.bin";
+const output_bin_file_name: &str = "../objects/teapot.bin";
+
 fn BVH(all_nodes: &mut Vec<Node>, all_triangles: &mut Vec<Triangle>, max_depth: i32) {
     // Create bounding box
     let mut bounds: BoundingBox = BoundingBox::new();
@@ -137,8 +141,7 @@ fn main() {
 
     // Load triangle data
     println!("Loading data...");
-    let triangle_data = include_bytes!("../../objects/dragon_800k.bin");
-    let triangle_data = triangle_data.to_vec();
+    let triangle_data = std::fs::read(input_file_name).expect("Failed to read input file");
     let triangle_data = triangle_data.chunks(4).collect::<Vec<_>>();
     let triangle_data = triangle_data
         .iter()
@@ -170,7 +173,7 @@ fn main() {
 
     // Build BVH
     println!("Building BVH...");
-    let max_depth: i32 = 32;
+    let max_depth: i32 = 16;
     BVH(&mut all_nodes, &mut all_triangles, max_depth);
 
     // Format data for writing: min, max, triangle_index, triangle_count, child_index
@@ -208,13 +211,13 @@ fn main() {
         .map(|d| d.to_ne_bytes())
         .flatten()
         .collect::<Vec<_>>();
-    std::fs::write("../objects/dragon_800k_bvh.bin", data).unwrap();
+    std::fs::write(output_bvh_file_name, data).unwrap();
     let triangle_data = triangle_data
         .iter()
         .map(|d| d.to_ne_bytes())
         .flatten()
         .collect::<Vec<_>>();
-    std::fs::write("../objects/dragon_800k.bin", triangle_data).unwrap();
+    std::fs::write(output_bin_file_name, triangle_data).unwrap();
 
     // for i in 0..all_nodes.len() {
     //     println!("Node {}\ttriangle index: {:?}\ttriangle count: {:?}\t child index: {:?} \tbounds: ({:?}, {:?}, {:?}), ({:?}, {:?}, {:?})", i, all_nodes[i].triangle_index, all_nodes[i].triangle_count, all_nodes[i].child_index, all_nodes[i].bounds.min.x, all_nodes[i].bounds.min.y, all_nodes[i].bounds.min.z, all_nodes[i].bounds.max.x, all_nodes[i].bounds.max.y, all_nodes[i].bounds.max.z);

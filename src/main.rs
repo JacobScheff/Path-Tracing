@@ -297,9 +297,12 @@ impl<'a> State<'a> {
         // sphere_data.push(vec![
         //     0.0, -5030.0, 0.0, 5000.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
         // ]);
+        // sphere_data.push(vec![
+        //     40.0, 40.0, -20.0, 10.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 10.0, 0.0,
+        // ]); // Light source
         sphere_data.push(vec![
-            40.0, 40.0, -20.0, 10.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 10.0, 0.0,
-        ]); // Light source
+            999999.0, 999999.0, 9999999.0, 10.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 10.0, 0.0,
+        ]); // Placeholder data for sphere that isn't visible in scene
 
         let sphere_data_u8: Vec<u8> = sphere_data
             .iter()
@@ -317,7 +320,7 @@ impl<'a> State<'a> {
         queue.write_buffer(&sphere_buffer, 0, bytemuck::cast_slice(&sphere_data_u8));
 
         // Load triangle data
-        let triangle_data = include_bytes!("../objects/dragon_800k.bin");
+        let triangle_data = include_bytes!("../objects/teapot.bin");
         let triangle_data = triangle_data.to_vec();
         let triangle_data = triangle_data.chunks(4).collect::<Vec<_>>();
         let triangle_data = triangle_data
@@ -336,7 +339,7 @@ impl<'a> State<'a> {
         queue.write_buffer(&triangle_buffer, 0, bytemuck::cast_slice(&triangle_data));
 
         // Create a bounding box for the triangles
-        let bvh_data = include_bytes!("../objects/dragon_800k_bvh.bin");
+        let bvh_data = include_bytes!("../objects/teapot_bvh.bin");
         let bvh_data = bvh_data.to_vec();
         let bvh_data = bvh_data.chunks(4).collect::<Vec<_>>();
         let bvh_data = bvh_data
