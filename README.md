@@ -1,5 +1,5 @@
 # Path Tracing
-This is a simple path tracer that can render one or more spheres and one complex, multi-triangled object in a scence with realistic lighting. For each object, the color, emission strength and color if it is a light source, and smoothness can be set
+This is a simple path tracer that can render one or more spheres and one complex, multi-triangled object in a scence with realistic lighting. The object and spheres can each have a different color, emission strength and color if it is a light source, and smoothness.
 
 ## How to use
 1. Upload the complex object as a .stl file in the objects folder
